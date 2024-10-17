@@ -6,6 +6,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Product, ProductImage
 from .serializers import ProductListSerializer, ProductSerializer
 from config.pagination import PageNumberPagination
@@ -24,6 +25,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.order_by("-created_at")
     serializer_class = ProductSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["name", "user__username", "variety", "growing_region"]
@@ -125,7 +127,11 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         product = serializer.save()
-        images_to_delete = self.request.data.getlist("images_to_delete", [])
+        images_to_delete = self.request.data.get("images_to_delete", [])
+
+        # 문자열로 전달된 경우 리스트로 변환
+        if isinstance(images_to_delete, str):
+            images_to_delete = [images_to_delete]
 
         for full_image_url in images_to_delete:
             try:
