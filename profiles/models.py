@@ -94,7 +94,7 @@ class PrivacySettings(models.Model):
         """모델 인스턴스를 저장하기 전에 기본 privacy_settings를 설정합니다."""
         if not self.privacy_settings:
             self.privacy_settings = {
-                field: {audience: False for audience, _ in self.PRIVACY_CHOICES}
+                field: {audience: True for audience, _ in self.PRIVACY_CHOICES}
                 for field in self.VISIBILITY_FIELDS
             }
         super().save(*args, **kwargs)
