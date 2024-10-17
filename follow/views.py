@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import (
@@ -19,6 +20,7 @@ User = get_user_model()
 
 class FollowView(generics.CreateAPIView):
     serializer_class = FollowSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -33,7 +35,7 @@ class FollowView(generics.CreateAPIView):
             ),
         ],
         responses={
-            status.HTTP_201_CREATED: ProfileSerializer,
+            status.HTTP_201_CREATED: OpenApiTypes.OBJECT,
             status.HTTP_400_BAD_REQUEST: OpenApiTypes.OBJECT,
             status.HTTP_401_UNAUTHORIZED: OpenApiTypes.OBJECT,
             status.HTTP_404_NOT_FOUND: OpenApiTypes.OBJECT,
@@ -88,7 +90,7 @@ class FollowView(generics.CreateAPIView):
                 status_codes=["500"],
             ),
         ],
-        tags=["profile"],
+        tags=["follow"],
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -136,37 +138,37 @@ class FollowView(generics.CreateAPIView):
             )
 
 
+@extend_schema(
+    summary="언팔로우",
+    description="특정 사용자를 언팔로우합니다.",
+    parameters=[
+        OpenApiParameter(
+            name="pk",
+            description="언팔로우할 사용자의 UUID",
+            required=True,
+            type=OpenApiTypes.UUID,
+        ),
+    ],
+    responses={
+        status.HTTP_200_OK: OpenApiResponse(
+            response=ProfileSerializer,
+            description="언팔로우 성공 및 해당 사용자의 프로필 정보 반환",
+        ),
+        status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+            description="팔로우한 사용자를 찾을 수 없음"
+        ),
+        status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+            description="이미 팔로우하지 않은 사용자"
+        ),
+    },
+    tags=["follow"],
+)
 class UnfollowView(generics.DestroyAPIView):
     queryset = Follow.objects.all()
-
-    permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
-    @extend_schema(
-        summary="언팔로우",
-        description="특정 사용자를 언팔로우합니다.",
-        parameters=[
-            OpenApiParameter(
-                name="pk",
-                description="언팔로우할 사용자의 UUID",
-                required=True,
-                type=OpenApiTypes.UUID,
-            ),
-        ],
-        responses={
-            status.HTTP_200_OK: OpenApiResponse(
-                response=ProfileSerializer,
-                description="언팔로우 성공 및 해당 사용자의 프로필 정보 반환",
-            ),
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                description="팔로우한 사용자를 찾을 수 없음"
-            ),
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                description="이미 팔로우하지 않은 사용자"
-            ),
-        },
-        tags=["profile"],
-    )
     def destroy(self, request, *args, **kwargs):
         """
         팔로우 관계가 있는 유저의 id 값 저장 후
@@ -200,6 +202,7 @@ class UnfollowView(generics.DestroyAPIView):
 
 class FollowerListView(generics.ListAPIView):
     serializer_class = FollowSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -211,7 +214,7 @@ class FollowerListView(generics.ListAPIView):
                 description="팔로워 목록",
             ),
         },
-        tags=["profile"],
+        tags=["follow"],
     )
     def list(self, request, *args, **kwargs):
         followers = request.user.followers.all().select_related("follower")
@@ -223,6 +226,7 @@ class FollowerListView(generics.ListAPIView):
 
 class FollowingListView(generics.ListAPIView):
     serializer_class = FollowSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -234,7 +238,7 @@ class FollowingListView(generics.ListAPIView):
                 description="팔로잉 목록",
             ),
         },
-        tags=["profile"],
+        tags=["follow"],
     )
     def list(self, request, *args, **kwargs):
         following = request.user.following.all().select_related("following")
