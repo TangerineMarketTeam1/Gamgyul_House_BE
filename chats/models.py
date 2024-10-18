@@ -26,14 +26,14 @@ class ChatRoom(models.Model):
 @receiver(post_save, sender=ChatRoom)
 def set_chat_room_name(sender, instance, **kwargs):
     """
-    채팅방 이름이 비어 있을 때, 참가자가 2명일 경우 자동으로 이름 생성
+    채팅방 이름이 비어 있을 때, 참가자들의 이름을 알파벳 순으로 정렬하여 채팅방 이름을 생성
     """
     if not instance.name and instance.participants.count() == 2:
         participant_names = ", ".join(
-            [user.username for user in instance.participants.all()]
+            sorted([user.username for user in instance.participants.all()])
         )
         instance.name = f"{participant_names}의 대화"
-        instance.save()
+        instance.save(update_fields=["name"])
 
 
 class Message(models.Model):
@@ -77,4 +77,4 @@ class WebSocketConnection(models.Model):
 
     def mark_disconnected(self):
         self.disconnected_at = timezone.now()
-        self.save()
+        self.save(update_fields=["disconnected_at"])

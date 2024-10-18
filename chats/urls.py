@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from chats.views import *
 
 router = DefaultRouter()
-router.register(r"rooms", ChatRoomViewSet, basename="rooms")
+router.register(r"chatrooms", ChatRoomViewSet, basename="chatroom")
 
 message_list = MessageViewSet.as_view(
     {
