@@ -6,8 +6,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample
-from .models import ChatRoom, Message, WebSocketConnection
-from .serializers import ChatRoomSerializer, MessageSerializer
+from chats.models import *
+from chats.serializers import *
 
 User = get_user_model()
 
@@ -23,6 +23,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     serializer_class = ChatRoomSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    lookup_field = "room_id"
 
     def get_queryset(self):
         """
@@ -89,7 +90,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         },
     )
     def retrieve(self, request, *args, **kwargs):
-        chat_room = self.get_object()
+        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
         self.mark_all_messages_as_read(chat_room)
         return Response(self.get_serializer(chat_room).data)
 
@@ -119,7 +120,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         """
         사용자가 채팅방을 나가고, 채팅방에 다른 사용자가 없다면 삭제
         """
-        chat_room = self.get_object()
+        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
         chat_room.participants.remove(request.user)
 
         if chat_room.participants.count() == 0:

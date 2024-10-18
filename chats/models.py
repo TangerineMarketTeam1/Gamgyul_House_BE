@@ -28,7 +28,6 @@ def set_chat_room_name(sender, instance, **kwargs):
     """
     채팅방 이름이 비어 있을 때, 참가자가 2명일 경우 자동으로 이름 생성
     """
-    # participants가 2명일 때 채팅방 이름 자동 설정
     if not instance.name and instance.participants.count() == 2:
         participant_names = ", ".join(
             [user.username for user in instance.participants.all()]
@@ -38,19 +37,13 @@ def set_chat_room_name(sender, instance, **kwargs):
 
 
 class Message(models.Model):
-    """
-    채팅 메시지 및 이미지 저장
-    """
-
     chat_room = models.ForeignKey(
         ChatRoom, related_name="messages", on_delete=models.CASCADE
     )
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(blank=True, null=True)
-
-    # 채팅방별로 이미지를 저장하도록 경로를 동적으로 생성
     image = models.ImageField(
-        upload_to=lambda instance, filename: f"chat_images/{instance.chat_room.id}/{filename}",
+        upload_to="chat_images/",  # S3에 업로드될 경로
         blank=True,
         null=True,
     )
