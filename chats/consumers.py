@@ -13,16 +13,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """
         클라이언트가 WebSocket에 연결할 때 호출
-        - 사용자 인증 여부를 확인한 후, 채팅방 참여 여부를 검증
-        - 참여 중인 경우 WebSocket 연결을 허용하고 그룹에 추가
         """
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"chat_{self.room_id}"
 
         # room_id가 올바른 UUID 형식인지 검증
-        try:
-            UUID(self.room_id, version=4)
-        except ValueError:
+        if not self.is_valid_uuid(self.room_id):
             await self.close()
             return
 
@@ -47,7 +43,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         """
         WebSocket 연결 종료 시 호출
-        WebSocketConnection 모델을 사용해 연결 종료 시간 기록
         """
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         await self.mark_connection_as_disconnected(self.scope["user"], self.room_id)
@@ -70,7 +65,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "status": "received",
                 },
             )
-
             # 메시지 수신 후 읽음 처리
             await self.mark_messages_as_read(self.room_id, self.scope["user"])
 
@@ -111,6 +105,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         )
 
+    @staticmethod
+    def is_valid_uuid(uuid_to_test, version=4):
+        """
+        UUID 검증
+        """
+        try:
+            UUID(uuid_to_test, version=version)
+            return True
+        except ValueError:
+            return False
+
     @database_sync_to_async
     def is_user_in_room(self, room_id, user):
         """
@@ -123,51 +128,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         WebSocket 연결 정보를 기록
         """
-        try:
-            chat_room = ChatRoom.objects.get(id=room_id)
+        chat_room = ChatRoom.objects.filter(id=room_id).first()
+        if chat_room:
             WebSocketConnection.objects.create(user=user, chat_room=chat_room)
-        except ObjectDoesNotExist:
-            pass
 
     @database_sync_to_async
     def mark_connection_as_disconnected(self, user, room_id):
         """
         WebSocket 연결 종료 시간을 기록
         """
-        try:
-            chat_room = ChatRoom.objects.get(id=room_id)
-            connection = (
-                WebSocketConnection.objects.filter(user=user, chat_room=chat_room)
-                .order_by("-connected_at")
-                .first()
-            )
-            if connection:
-                connection.mark_disconnected()
-        except ObjectDoesNotExist:
-            pass
+        chat_room = ChatRoom.objects.filter(id=room_id).first()
+        if chat_room:
+            connection = WebSocketConnection.objects.filter(
+                user=user, chat_room=chat_room
+            ).latest("connected_at")
+            connection.mark_disconnected()
 
     @database_sync_to_async
     def mark_messages_as_read(self, room_id, user):
         """
         사용자가 채팅방에 입장할 때, 읽지 않은 메시지를 모두 읽음 처리
         """
-        try:
-            chat_room = ChatRoom.objects.get(id=room_id)
+        chat_room = ChatRoom.objects.filter(id=room_id).first()
+        if chat_room:
             Message.objects.filter(chat_room=chat_room, is_read=False).exclude(
                 sender=user
             ).update(is_read=True)
-        except ObjectDoesNotExist:
-            pass
 
     @database_sync_to_async
     def mark_message_as_read(self, message_id):
         """
         실시간 전송된 개별 메시지를 읽음 상태로 업데이트
         """
-        try:
-            message = Message.objects.get(id=message_id)
-            if not message.is_read:
-                message.is_read = True
-                message.save()
-        except ObjectDoesNotExist:
-            pass
+        message = Message.objects.filter(id=message_id).first()
+        if message and not message.is_read:
+            message.is_read = True
+            message.save()

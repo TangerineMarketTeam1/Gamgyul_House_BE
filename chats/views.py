@@ -97,24 +97,8 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     )
     def retrieve(self, request, *args, **kwargs):
         chat_room = get_chat_room_or_404(kwargs["room_id"], request.user)
-        self.mark_all_messages_as_read(chat_room)
+        WebSocketConnection.mark_all_messages_as_read(chat_room, request.user)
         return Response(self.get_serializer(chat_room).data)
-
-    def mark_all_messages_as_read(self, chat_room):
-        """
-        채팅방에 들어오면 읽지 않은 메시지를 읽음 처리
-        """
-        other_user = chat_room.participants.exclude(id=self.request.user.id).first()
-        if not other_user:
-            return
-
-        # 읽지 않은 메시지를 읽음 처리
-        unread_messages = Message.objects.filter(
-            chat_room=chat_room, is_read=False
-        ).exclude(sender=self.request.user)
-
-        if unread_messages.exists():
-            unread_messages.update(is_read=True)
 
     @extend_schema(
         summary="채팅방 나가기",
