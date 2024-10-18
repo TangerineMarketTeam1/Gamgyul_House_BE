@@ -43,7 +43,7 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(blank=True, null=True)
     image = models.ImageField(
-        upload_to="chat_images/",  # S3에 업로드될 경로
+        upload_to="chat_images/%Y/%m/%d/",  # S3 업로드 경로
         blank=True,
         null=True,
     )
