@@ -150,8 +150,6 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     프로필 업데이트 serializer
     """
 
-    profile_image_thumbnail = serializers.SerializerMethodField()
-
     class Meta:
         model = User
         fields = [
