@@ -11,9 +11,6 @@ User = get_user_model()
 
 
 class FriendRecommendationView(generics.ListAPIView):
-    """
-    친구 추천 view
-    """
 
     serializer_class = ProfileSearchSerializer
     permission_classes = [IsAuthenticated]
@@ -32,7 +29,7 @@ class FriendRecommendationView(generics.ListAPIView):
                 description="인증되지 않은 사용자",
             ),
         },
-        tags=["recommendatiion"],
+        tags=["recommendation"],
     )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
