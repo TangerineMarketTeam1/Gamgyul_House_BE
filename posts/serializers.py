@@ -2,14 +2,9 @@ from rest_framework import serializers
 from taggit.serializers import TagListSerializerField, TaggitSerializer
 from .models import Post, PostImage
 from django.contrib.auth import get_user_model
+from search.serializers import ProfileSearchSerializer
 
 User = get_user_model()
-
-
-class SimpleUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "username", "profile_image"]
 
 
 class PostImageSerializer(serializers.ModelSerializer):
@@ -23,7 +18,7 @@ class PostImageSerializer(serializers.ModelSerializer):
 class PostSerializer(TaggitSerializer, serializers.ModelSerializer):
     """게시물 모델의 serializer"""
 
-    user = SimpleUserSerializer(read_only=True)
+    user = ProfileSearchSerializer(read_only=True)
     uploaded_images = PostImageSerializer(many=True, read_only=True)
     images = serializers.ListField(
         child=serializers.ImageField(
