@@ -4,6 +4,7 @@ from imagekit.processors import ResizeToFit
 from django.db import models
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
 User = get_user_model()
 
@@ -36,7 +37,8 @@ def upload_to(instance, filename):
     이미지를 UUID로 데이터베이스에 저장하는 함수
     """
     ext = filename.split(".")[-1]
-    return f"products/{uuid.uuid4()}.{ext}"
+    now = datetime.now()
+    return f"products/{now.year}/{now.month:02d}/{now.day:02d}/{uuid.uuid4()}.{ext}"
 
 
 class ProductImage(models.Model):
