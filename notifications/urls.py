@@ -3,8 +3,13 @@ from rest_framework.routers import DefaultRouter
 from notifications.views import *
 
 router = DefaultRouter()
-router.register(r"list", NotificationViewSet, basename="list")
+router.register(r"", NotificationViewSet, basename="notifications")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "delete_all/",
+        NotificationViewSet.as_view({"delete": "delete_all"}),
+        name="notification-delete-all",
+    ),
 ]
