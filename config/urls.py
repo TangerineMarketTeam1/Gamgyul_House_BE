@@ -10,6 +10,8 @@ from drf_spectacular.views import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
+    path("auth/", include("dj_rest_auth.urls")),
+    path("auth/registration/", include("dj_rest_auth.registration.urls")),
     path("chats/", include("chats.urls")),
     path("market/", include("market.urls")),
     path("follow/", include("follow.urls")),
