@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import Report
 from posts.models import Post
+import uuid
 
 User = get_user_model()
 
@@ -19,10 +20,10 @@ class ReportCreateViewTestCase(APITestCase):
             email="test@example.com", password="testpass123", username="testuser"
         )
         self.post = Post.objects.create(user=self.user, content="Test post")
-        self.url = reverse("report:report-create")
+        self.url = reverse("report-create")
         self.valid_payload = {
-            "content_type": "insta.post",
-            "object_id": self.post.id,
+            "content_type": "posts.post",
+            "object_id": str(self.post.id),
             "reason": "spam",
             "description": "신고 기능 테스트",
         }
@@ -36,7 +37,7 @@ class ReportCreateViewTestCase(APITestCase):
         report = Report.objects.first()
         self.assertEqual(report.reporter, self.user)
         self.assertEqual(report.content_type, ContentType.objects.get_for_model(Post))
-        self.assertEqual(report.object_id, self.post.id)
+        self.assertEqual(report.object_id, str(self.post.id))
 
     def test_create_report_unauthenticated(self):
         """인증되지 않은 사용자의 신고 시도"""
@@ -60,7 +61,7 @@ class ReportCreateViewTestCase(APITestCase):
         """존재하지 않는 object_id로 신고 시도"""
         self.client.force_authenticate(user=self.user)
         invalid_payload = self.valid_payload.copy()
-        invalid_payload["object_id"] = 9999  # 존재하지 않는 ID
+        invalid_payload["object_id"] = str(uuid.uuid4())  # 존재하지 않는 ID
         response = self.client.post(self.url, invalid_payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Report.objects.count(), 0)

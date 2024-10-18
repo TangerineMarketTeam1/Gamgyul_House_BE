@@ -31,7 +31,7 @@ class ProfileSearchViewTestCase(APITransactionTestCase):
         프로필 검색 테스트
         한 명의 사용자가 검색되어야 함(본인 제외)
         """
-        url = reverse("accounts:profile_search")
+        url = reverse("profile_search")
         response = self.client.get(url, {"q": "testuser"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(f"Response data: {response.data}")
@@ -39,7 +39,7 @@ class ProfileSearchViewTestCase(APITransactionTestCase):
 
     def test_profile_search_no_query(self):
         """쿼리가 없는 경우 빈 결과 반환 테스트"""
-        url = reverse("accounts:profile_search")
+        url = reverse("profile_search")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(f"Response data: {response.data}")
@@ -47,7 +47,7 @@ class ProfileSearchViewTestCase(APITransactionTestCase):
 
     def test_profile_search_no_results(self):
         """쿼리에 일치하는 사용자가 없는 경우 빈 결과 반환 테스트"""
-        url = reverse("accounts:profile_search")
+        url = reverse("profile_search")
         response = self.client.get(url, {"q": "nonexistent"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(f"Response data: {response.data}")
