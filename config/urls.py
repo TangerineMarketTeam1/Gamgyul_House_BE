@@ -12,6 +12,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("chats/", include("chats.urls")),
     path("market/", include("market.urls")),
+    path("notifications/", include("notifications.urls")),
     path("follow/", include("follow.urls")),
     path("profiles/", include("profiles.urls")),
     path("recommendations/", include("recommendations.urls")),
