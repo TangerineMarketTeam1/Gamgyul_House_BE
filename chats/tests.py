@@ -15,9 +15,8 @@ class ChatRoomTestCase(APITestCase):
 
     def setUp(self):
         """
-        테스트용 사용자 생성 및 로그인 처리
+        각 테스트 실행 전에 호출되며, 테스트 데이터를 초기화
         """
-        # 데이터 초기화
         ChatRoom.objects.all().delete()
         Message.objects.all().delete()
 
@@ -47,7 +46,7 @@ class ChatRoomTestCase(APITestCase):
         """
         채팅방 생성 테스트: 새로운 채팅방이 성공적으로 생성되는지 검증
         """
-        url = reverse("chatroom-list")  # router를 통해 자동 생성된 패턴
+        url = reverse("chatrooms-list")
         data = {"participants": ["user2"]}  # user1은 자동으로 추가됨
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -60,7 +59,7 @@ class ChatRoomTestCase(APITestCase):
         """
         중복 채팅방 생성 방지 테스트: 동일한 참가자로 두 번째 채팅방 생성 시도 금지
         """
-        url = reverse("chatroom-list")
+        url = reverse("chatrooms-list")
         data = {"participants": ["user2"]}
 
         # 첫 번째 방 생성
@@ -69,16 +68,13 @@ class ChatRoomTestCase(APITestCase):
         # 같은 참가자로 두 번째 생성 시도
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            response.data[0],
-            "이미 이 사용자와의 채팅방이 존재합니다.",
-        )
+        self.assertIn("이미 이 사용자와의 채팅방이 존재합니다.", response.data)
 
     def test_invalid_participants(self):
         """
         유효하지 않은 참가자 처리 테스트: 두 명이 아닌 참가자가 있을 경우 오류 발생.
         """
-        url = reverse("chatroom-list")  # router를 통해 자동 생성된 패턴
+        url = reverse("chatrooms-list")
         data = {"participants": ["user2", "user3"]}  # 세 명 이상일 때
 
         response = self.client.post(url, data, format="json")
@@ -92,9 +88,7 @@ class ChatRoomTestCase(APITestCase):
         chatroom = ChatRoom.objects.create()
         chatroom.participants.set([self.user1, self.user2])
 
-        url = reverse(
-            "chatroom-leave", kwargs={"room_id": chatroom.id}
-        )  # 자동 생성된 leave URL
+        url = reverse("chatrooms-leave", kwargs={"room_id": chatroom.id})
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -108,9 +102,7 @@ class ChatRoomTestCase(APITestCase):
         chatroom = ChatRoom.objects.create()
         chatroom.participants.set([self.user1, self.user2])
 
-        url = reverse(
-            "message-list", kwargs={"room_id": chatroom.id}
-        )  # 자동 생성된 message list URL
+        url = reverse("message-list", kwargs={"room_id": chatroom.id})
         data = {"content": "Hello!"}
         response = self.client.post(url, data, format="json")
 
@@ -125,16 +117,18 @@ class ChatRoomTestCase(APITestCase):
         chatroom = ChatRoom.objects.create()
         chatroom.participants.set([self.user1, self.user2])
 
-        # 사용자1이 보낸 메시지 (초기 상태에서는 읽지 않음)
+        # user1이 보낸 메시지 (초기 상태에서는 읽지 않음)
         message = Message.objects.create(
             chat_room=chatroom, sender=self.user1, content="Hello!"
         )
+        self.assertFalse(message.is_read)
 
         # user2로 로그인하고 채팅방 입장
-        self.client.login(email="newuser2@example.com", password="newpassword123")
-        url = reverse("chatroom-detail", kwargs={"room_id": chatroom.id})
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(self.user2).access_token}"
+        )
+        url = reverse("chatrooms-detail", kwargs={"room_id": chatroom.id})
         response = self.client.get(url)
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # 메시지가 읽음 처리되었는지 확인
