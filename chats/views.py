@@ -5,7 +5,8 @@ from rest_framework.decorators import action
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from uuid import UUID
 from chats.models import *
 from chats.serializers import *
 
@@ -79,6 +80,11 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=201)
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="room_id", type=UUID, location="path", description="채팅방 ID"
+            )
+        ],
         summary="채팅방 상세 조회",
         description="채팅방 ID를 기준으로 채팅방 정보를 반환합니다. 입장 시 읽지 않은 메시지를 모두 읽음으로 처리합니다.",
         responses={
@@ -90,7 +96,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         },
     )
     def retrieve(self, request, *args, **kwargs):
-        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
+        chat_room = get_chat_room_or_404(kwargs["room_id"], request.user)
         self.mark_all_messages_as_read(chat_room)
         return Response(self.get_serializer(chat_room).data)
 
@@ -120,7 +126,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         """
         사용자가 채팅방을 나가고, 채팅방에 다른 사용자가 없다면 삭제
         """
-        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
+        chat_room = get_chat_room_or_404(kwargs["room_id"], request.user)
         chat_room.participants.remove(request.user)
 
         if chat_room.participants.count() == 0:
