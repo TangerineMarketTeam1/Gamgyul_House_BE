@@ -51,9 +51,15 @@ class ChatRoomTestCase(APITestCase):
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        # 채팅방을 새로고침하여 시그널에 의해 업데이트된 이름을 확인
+        chat_room_id = response.data["id"]
+        chat_room = ChatRoom.objects.get(id=chat_room_id)
+        chat_room.refresh_from_db()  # 데이터베이스에서 최신 상태로 새로고침
+
         # 참가자 이름이 알파벳 순으로 정렬되어야 함
-        expected_name = "user1, user2의 대화"
-        self.assertEqual(response.data["name"], expected_name)
+        participant_names = sorted(["user1", "user2"])  # 예상 이름을 정렬된 상태로 만듦
+        expected_name = f"{', '.join(participant_names)}의 대화"
+        self.assertEqual(chat_room.name, expected_name)
 
     def test_duplicate_chatroom_creation(self):
         """
