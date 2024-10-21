@@ -1,6 +1,13 @@
 from dj_rest_auth.serializers import LoginSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from .models import CustomUser
+
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "username", "profile_image"]
 
 
 class CustomLoginSerializer(LoginSerializer):
