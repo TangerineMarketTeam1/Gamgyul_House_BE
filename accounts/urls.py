@@ -6,7 +6,7 @@ from dj_rest_auth.views import (
     LogoutView,
 )
 from dj_rest_auth.registration.views import RegisterView
-from .views import CustomLoginView, GoogleLogin
+from . import views
 
 urlpatterns = [
     path("password/reset/", PasswordResetView.as_view(), name="rest_password_reset"),
@@ -16,8 +16,9 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path("password/change/", PasswordChangeView.as_view(), name="rest_password_change"),
-    path("login/", CustomLoginView.as_view(), name="rest_login"),
+    path("login/", views.CustomLoginView.as_view(), name="rest_login"),
     path("logout/", LogoutView.as_view(), name="rest_logout"),
     path("registration/", RegisterView.as_view(), name="rest_register"),
-    path("google/", GoogleLogin.as_view(), name="google_login"),
+    path("google/", views.GoogleLogin.as_view(), name="google_login"),
+    path("current-user/", views.CurrentUserView.as_view(), name="current_user"),
 ]
