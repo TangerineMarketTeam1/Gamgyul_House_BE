@@ -233,26 +233,3 @@ SIMPLE_JWT = {
 # imagekit 설정
 IMAGEKIT_DEFAULT_CACHEFILE_STRATEGY = "imagekit.cachefiles.strategies.Optimistic"
 IMAGEKIT_CACHEFILE_DIR = "CACHE/images"
-
-# storages settings
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
-            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": "gamgyulhouse",
-            "region_name": "ap-northeast-2",
-            "default_acl": "public-read",
-            "querystring_auth": False,
-        },
-    },
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
-            "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": "gamgyulhouse",
-        },
-    },
-}
