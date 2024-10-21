@@ -109,12 +109,12 @@ class FollowViewsTestCase(TestCase):
 
     def test_follow_invalid_uuid(self):
         self.client.force_authenticate(user=self.user1)
-        url = reverse("follow", kwargs={"pk": "invalid-uuid"})
+        url = "/follow/follow/invalid-uuid/"
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_unfollow_invalid_uuid(self):
         self.client.force_authenticate(user=self.user1)
-        url = reverse("unfollow", kwargs={"pk": "invalid-uuid"})
+        url = "/follow/unfollow/invalid-uuid/"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

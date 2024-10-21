@@ -26,7 +26,7 @@ class Report(models.Model):
         User, on_delete=models.CASCADE, related_name="reports_submitted"
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.CharField()
     reported_content = GenericForeignKey("content_type", "object_id")
     reason = models.CharField(choices=REPORT_REASONS)
     description = models.TextField(blank=True)
