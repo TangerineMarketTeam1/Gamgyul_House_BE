@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("chats/", include("chats.urls")),
+    path("comments/", include("comments.urls")),
     path("market/", include("market.urls")),
     path("notifications/", include("notifications.urls")),
     path("follow/", include("follow.urls")),
