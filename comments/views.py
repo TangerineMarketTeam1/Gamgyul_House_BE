@@ -13,6 +13,19 @@ from .models import Comment
 from .serializers import CommentSerializer
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="post_id",
+            description="게시물의 UUID",
+            required=True,
+            type=str,
+            location=OpenApiParameter.PATH,
+            pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        )
+    ],
+    tags=["comment"],
+)
 class CommentViewSet(viewsets.ModelViewSet):
     """댓글 관련 ViewSet"""
 
@@ -20,51 +33,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     @extend_schema(
-        summary="댓글 목록 조회 및 작성",
-        description="특정 게시물에 대한 댓글을 조회하거나 작성할 수 있습니다.",
-        parameters=[
-            OpenApiParameter(
-                name="post_id", description="게시물의 ID", required=True, type=int
-            )
-        ],
+        summary="댓글 목록 조회",
+        description="특정 게시물에 대한 댓글을 조회합니다.",
         responses={
             200: OpenApiResponse(
                 description="댓글 목록 조회에 성공하였습니다.",
-                examples=[
-                    OpenApiExample(
-                        "Example 1",
-                        summary="댓글 목록 조회 예시",
-                        value=[
-                            {
-                                "id": 1,
-                                "content": "첫 번째 댓글입니다.",
-                                "created_at": "2024-10-08T09:00:00Z",
-                            },
-                            {
-                                "id": 2,
-                                "content": "두 번째 댓글입니다.",
-                                "created_at": "2024-10-08T09:05:00Z",
-                            },
-                        ],
-                    )
-                ],
-            ),
-            201: OpenApiResponse(
-                description="댓글 작성에 성공하였습니다.",
-                response=CommentSerializer,
-            ),
-            403: OpenApiResponse(
-                description="작성 권한이 없습니다.",
-                examples=[
-                    OpenApiExample(
-                        "Example 1",
-                        summary="작성 권한 없음",
-                        value={"detail": "인증된 사용자만 댓글을 작성할 수 있습니다."},
-                    )
-                ],
+                response=CommentSerializer(many=True),
             ),
         },
-        tags=["comment"],
     )
     def list(self, request, *args, **kwargs):
         """특정 게시물에 대한 댓글 목록 반환"""
@@ -76,6 +52,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="댓글 작성",
         description="특정 게시물에 대한 댓글을 작성합니다.",
+        request=CommentSerializer,
         responses={
             201: OpenApiResponse(
                 description="댓글 작성에 성공하였습니다.",
@@ -92,7 +69,6 @@ class CommentViewSet(viewsets.ModelViewSet):
                 ],
             ),
         },
-        tags=["comment"],
     )
     def create(self, request, *args, **kwargs):
         """새 댓글 또는 대댓글 작성"""
@@ -141,7 +117,6 @@ class CommentViewSet(viewsets.ModelViewSet):
                 ],
             ),
         },
-        tags=["comment"],
     )
     def destroy(self, request, *args, **kwargs):
         """댓글 삭제"""
