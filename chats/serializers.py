@@ -44,7 +44,8 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         room_key = "_".join(participant_ids)
 
         # 동일한 room_key가 존재하는지 확인하여 중복 방지
-        if ChatRoom.objects.filter(room_key=room_key).exists():
+        existing_room = ChatRoom.objects.filter(room_key=room_key).first()
+        if existing_room:
             raise serializers.ValidationError("이미 이 사용자와의 채팅방이 존재합니다.")
 
         # 채팅방 생성 및 참가자 설정
@@ -84,7 +85,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        텍스트나 이미지 중 하나는 반드시 포함되어야 한다.
+        텍스트나 이미지 중 하나는 반드시 포함되어야 합니다.
         """
         content = data.get("content")
         image = data.get("image")
@@ -97,6 +98,8 @@ class MessageSerializer(serializers.ModelSerializer):
     def validate_image(self, value):
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError(
-                "이미지의 크기는 5MB를 넘지 않아야 합니다."
+                "이미지의 크기는 5MB를 넘지 않아야 합니다. 현재 크기: {:.2f}MB".format(
+                    value.size / (1024 * 1024)
+                )
             )
         return value

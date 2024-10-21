@@ -97,24 +97,8 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     )
     def retrieve(self, request, *args, **kwargs):
         chat_room = get_chat_room_or_404(kwargs["room_id"], request.user)
-        self.mark_all_messages_as_read(chat_room)
+        WebSocketConnection.mark_all_messages_as_read(chat_room, request.user)
         return Response(self.get_serializer(chat_room).data)
-
-    def mark_all_messages_as_read(self, chat_room):
-        """
-        채팅방에 들어오면 읽지 않은 메시지를 읽음 처리
-        """
-        other_user = chat_room.participants.exclude(id=self.request.user.id).first()
-        if not other_user:
-            return
-
-        # 상대방이 WebSocket에 연결되지 않은 상태일 경우에만 읽음 처리
-        if not WebSocketConnection.objects.filter(
-            user=other_user, chat_room=chat_room, disconnected_at__isnull=True
-        ).exists():
-            Message.objects.filter(chat_room=chat_room, is_read=False).exclude(
-                sender=self.request.user
-            ).update(is_read=True)
 
     @extend_schema(
         summary="채팅방 나가기",
@@ -176,9 +160,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
-        message = self.get_serializer().save(
-            sender=self.request.user, chat_room=chat_room
-        )
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.save(sender=self.request.user, chat_room=chat_room)
 
         # 상대방이 WebSocket을 통해 연결되어 있고, 메시지를 실제로 읽은 경우 읽음 처리
         other_user = chat_room.participants.exclude(id=self.request.user.id).first()
@@ -187,4 +171,4 @@ class MessageViewSet(viewsets.ModelViewSet):
         ).exists():
             message.is_read = True
             message.save()
-        return Response(self.get_serializer(message).data, status=201)
+        return Response(serializer.data, status=201)

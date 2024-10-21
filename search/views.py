@@ -8,14 +8,14 @@ from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiExample,
 )
-from .serializers import ProfileSearchSerializer
+from accounts.serializers import SimpleUserSerializer
 from .filters import ProfileFilter
 
 User = get_user_model()
 
 
 class ProfileSearchView(generics.ListAPIView):
-    serializer_class = ProfileSearchSerializer
+    serializer_class = SimpleUserSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
@@ -32,7 +32,7 @@ class ProfileSearchView(generics.ListAPIView):
                 type=str,
             ),
         ],
-        responses={200: ProfileSearchSerializer(many=True)},
+        responses={200: SimpleUserSerializer(many=True)},
         examples=[
             OpenApiExample(
                 "응답 예시",
@@ -40,12 +40,12 @@ class ProfileSearchView(generics.ListAPIView):
                     {
                         "id": 1,
                         "username": "john_doe",
-                        "profile_image": "http://example.com/media/profile_images/john.jpg",
+                        "profile_image": "http://example.com/profile/2024/10/20/jane.jpg",
                     },
                     {
                         "id": 2,
                         "username": "jane_doe",
-                        "profile_image": "http://example.com/media/profile_images/jane.jpg",
+                        "profile_image": "http://example.com/profile/2024/10/20/jane.jpg",
                     },
                 ],
                 response_only=True,
