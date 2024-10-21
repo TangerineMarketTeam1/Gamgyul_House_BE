@@ -21,6 +21,7 @@ urlpatterns = [
     path("market/", include("market.urls")),
     path("notifications/", include("notifications.urls")),
     path("follow/", include("follow.urls")),
+    path("likes/", include("likes.urls")),
     path("profiles/", include("profiles.urls")),
     path("recommendations/", include("recommendations.urls")),
     path("search/", include("search.urls")),
