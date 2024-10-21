@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
 from rest_framework import generics
@@ -10,7 +9,7 @@ from drf_spectacular.utils import (
     OpenApiExample,
 )
 from accounts.serializers import SimpleUserSerializer
-from .filters import ProfileFilter
+from .filters import ProfileFilter, PostFilter, ProductFilter
 from posts.models import Post
 from market.models import Product
 from .serializers import PostSearchSerializer
@@ -20,6 +19,17 @@ User = get_user_model()
 
 
 class ProfileSearchView(generics.ListAPIView):
+    """사용자 프로필 검색을 위한 API 뷰.
+
+    이 뷰는 사용자 이름과 이메일을 기반으로 프로필을 검색하고 결과를 반환합니다.
+
+    Attributes:
+        serializer_class (Serializer): 응답 데이터 직렬화를 위한 시리얼라이저.
+        permission_classes (list): 뷰 접근 권한 클래스 목록.
+        filter_backends (tuple): 사용할 필터 백엔드.
+        filterset_class (FilterSet): 쿼리셋 필터링을 위한 필터 클래스.
+    """
+
     serializer_class = SimpleUserSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
@@ -58,52 +68,60 @@ class ProfileSearchView(generics.ListAPIView):
         tags=["search"],
     )
     def get(self, request, *args, **kwargs):
+        """GET 요청을 처리하여 프로필 검색 결과를 반환합니다.
+
+        이 메서드는 부모 클래스의 get 메서드를 호출하여 검색 결과를 반환합니다.
+
+        Args:
+            request (HttpRequest): 클라이언트의 HTTP 요청 객체.
+            *args: 추가 위치 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 검색된 프로필 목록을 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """검색 대상이 될 기본 쿼리셋을 반환합니다.
+
+        Returns:
+            QuerySet: 모든 사용자 객체를 포함하는 쿼리셋.
+        """
         return User.objects.all()
 
     def filter_queryset(self, queryset):
-        """쿼리 파라미터 'q'가 없을 때 빈 queryset을 반환"""
+        """쿼리셋에 필터를 적용합니다.
+
+        이 메서드는 검색 쿼리 파라미터('q')가 제공된 경우에만 필터링을 수행합니다.
+        검색 쿼리가 없으면 빈 쿼리셋을 반환합니다.
+
+        Args:
+            queryset (QuerySet): 필터링할 원본 쿼리셋.
+
+        Returns:
+            QuerySet: 필터링된 쿼리셋 또는 빈 쿼리셋.
+        """
         filtered_queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
             return queryset.none()
         return filtered_queryset
 
 
-class PostFilter(filters.FilterSet):
-    q = filters.CharFilter(method="filter_search", label="Search")
-
-    class Meta:
-        model = Post
-        fields = ["q"]
-
-    def filter_search(self, queryset, name, value):
-        # Split the search query into words
-        words = value.split()
-
-        # Prepare a Q object for non-tag words
-        content_query = Q()
-        # Prepare a Q object for tags
-        tag_query = Q()
-
-        for word in words:
-            if word.startswith("#"):
-                # This is a tag
-                tag_query |= Q(tags__name__iexact=word[1:])
-            else:
-                # This is a regular word
-                content_query |= (
-                    Q(content__icontains=word)
-                    | Q(user__username__icontains=word)
-                    | Q(location__icontains=word)
-                )
-
-        # Combine both queries
-        return queryset.filter(content_query | tag_query).distinct()
-
-
 class PostSearchView(generics.ListAPIView):
+    """게시물 검색을 위한 API 뷰.
+
+
+    이 뷰는 게시물 내용, 사용자 이름, 위치, 태그를 기반으로 게시물을 검색하고 결과를 반환합니다.
+    검색 결과는 생성 시간의 역순으로 정렬됩니다.
+
+    Attributes:
+        serializer_class (Serializer): 응답 데이터 직렬화를 위한 시리얼라이저.
+        filter_backends (tuple): 사용할 필터 백엔드.
+        filterset_class (FilterSet): 쿼리셋 필터링을 위한 필터 클래스.
+        ordering (list): 기본 정렬 기준.
+    """
+
     serializer_class = PostSearchSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = PostFilter
@@ -148,74 +166,60 @@ class PostSearchView(generics.ListAPIView):
         tags=["search"],
     )
     def get(self, request, *args, **kwargs):
+        """GET 요청을 처리하여 게시물 검색 결과를 반환합니다.
+
+        이 메서드는 부모 클래스의 get 메서드를 호출하여 검색 결과를 반환합니다.
+
+        Args:
+            request (HttpRequest): 클라이언트의 HTTP 요청 객체.
+            *args: 추가 위치 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 검색된 게시물 목록을 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """검색 대상이 될 기본 쿼리셋을 반환합니다.
+
+        Returns:
+            QuerySet: 모든 게시물 객체를 포함하는 쿼리셋.
+        """
         return Post.objects.all()
 
     def filter_queryset(self, queryset):
-        """쿼리 파라미터 'q'가 없을 때 빈 queryset을 반환"""
+        """쿼리셋에 필터를 적용합니다.
+
+        이 메서드는 검색 쿼리 파라미터('q')가 제공된 경우에만 필터링을 수행합니다.
+        검색 쿼리가 없으면 빈 쿼리셋을 반환합니다.
+
+        Args:
+            queryset (QuerySet): 필터링할 원본 쿼리셋.
+
+        Returns:
+            QuerySet: 필터링된 쿼리셋 또는 빈 쿼리셋.
+        """
         filtered_queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
             return queryset.none()
         return filtered_queryset
 
 
-class ProductFilter(filters.FilterSet):
-    q = filters.CharFilter(method="filter_search", label="Search")
-    category = filters.ChoiceFilter(
-        choices=[
-            ("name", "Name"),
-            ("description", "Description"),
-            ("variety", "Variety"),
-            ("growing_region", "Growing Region"),
-            ("price", "Price"),
-            ("user", "User"),
-        ],
-        method="filter_by_category",
-        label="Category",
-    )
-    min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
-    max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
-
-    class Meta:
-        model = Product
-        fields = ["q", "category", "min_price", "max_price"]
-
-    def filter_search(self, queryset, name, value):
-        category = self.data.get("category", "all")
-
-        if category == "name":
-            return queryset.filter(name__icontains=value)
-        elif category == "description":
-            return queryset.filter(description__icontains=value)
-        elif category == "variety":
-            return queryset.filter(variety__icontains=value)
-        elif category == "growing_region":
-            return queryset.filter(growing_region__icontains=value)
-        elif category == "price":
-            try:
-                price = float(value)
-                return queryset.filter(price=price)
-            except ValueError:
-                return queryset.none()
-        elif category == "user":
-            return queryset.filter(user__username__icontains=value)
-        else:  # 'all' or any other value
-            return queryset.filter(
-                Q(name__icontains=value)
-                | Q(description__icontains=value)
-                | Q(variety__icontains=value)
-                | Q(growing_region__icontains=value)
-                | Q(user__username__icontains=value)
-            )
-
-    def filter_by_category(self, queryset, name, value):
-        # This method is not actually used, but is required by django-filter
-        return queryset
-
-
 class ProductSearchView(generics.ListAPIView):
+    """상품 검색을 위한 API 뷰.
+
+    이 뷰는 상품 이름, 설명, 품종, 재배 지역, 가격, 사용자 이름을 기반으로 상품을 검색하고 결과를 반환합니다.
+    검색 결과는 생성 시간의 역순으로 기본 정렬되며, 생성 시간과 가격으로 정렬할 수 있습니다.
+
+    Attributes:
+        serializer_class (Serializer): 응답 데이터 직렬화를 위한 시리얼라이저.
+        filter_backends (tuple): 사용할 필터 백엔드.
+        filterset_class (FilterSet): 쿼리셋 필터링을 위한 필터 클래스.
+        ordering_fields (list): 정렬 가능한 필드 목록.
+        ordering (list): 기본 정렬 기준.
+    """
+
     serializer_class = ProductListSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = ProductFilter
@@ -271,12 +275,40 @@ class ProductSearchView(generics.ListAPIView):
         tags=["search"],
     )
     def get(self, request, *args, **kwargs):
+        """GET 요청을 처리하여 상품 검색 결과를 반환합니다.
+
+        이 메서드는 부모 클래스의 get 메서드를 호출하여 검색 결과를 반환합니다.
+
+        Args:
+            request (HttpRequest): 클라이언트의 HTTP 요청 객체.
+            *args: 추가 위치 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 검색된 상품 목록을 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """검색 대상이 될 기본 쿼리셋을 반환합니다.
+
+        Returns:
+            QuerySet: 모든 상품 객체를 포함하는 쿼리셋.
+        """
         return Product.objects.all()
 
     def filter_queryset(self, queryset):
+        """쿼리셋에 필터를 적용합니다.
+
+        이 메서드는 검색 쿼리 파라미터('q')가 제공된 경우에만 필터링을 수행합니다.
+        검색 쿼리가 없으면 빈 쿼리셋을 반환합니다.
+
+        Args:
+            queryset (QuerySet): 필터링할 원본 쿼리셋.
+
+        Returns:
+            QuerySet: 필터링된 쿼리셋 또는 빈 쿼리셋.
+        """
         filtered_queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
             return queryset.none()
