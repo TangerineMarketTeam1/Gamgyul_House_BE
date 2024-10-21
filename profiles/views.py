@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import ValidationError
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -22,7 +21,6 @@ class ProfileDetailView(generics.RetrieveAPIView):
 
     queryset = User.objects.all()
     serializer_class = ProfileSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_field = "id"
 
@@ -67,7 +65,6 @@ class ProfileDetailView(generics.RetrieveAPIView):
 class ProfileUpdateView(generics.UpdateAPIView):
 
     serializer_class = ProfileUpdateSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -128,7 +125,6 @@ class ProfileUpdateView(generics.UpdateAPIView):
 
 class PrivacySettingsView(generics.RetrieveUpdateAPIView):
     serializer_class = PrivacySettingsSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self):

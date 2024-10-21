@@ -5,7 +5,6 @@ from dj_rest_auth.views import LoginView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import CustomLoginSerializer
 from profiles.serializers import ProfileSerializer
 
@@ -23,7 +22,6 @@ class CustomLoginView(LoginView):
 
 
 class CurrentUserView(APIView):
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

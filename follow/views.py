@@ -1,7 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import (
@@ -20,7 +19,6 @@ User = get_user_model()
 
 class FollowView(generics.CreateAPIView):
     serializer_class = FollowSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -167,7 +165,6 @@ class UnfollowView(generics.DestroyAPIView):
     queryset = Follow.objects.all()
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -202,7 +199,6 @@ class UnfollowView(generics.DestroyAPIView):
 
 class FollowerListView(generics.ListAPIView):
     serializer_class = FollowSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -226,7 +222,6 @@ class FollowerListView(generics.ListAPIView):
 
 class FollowingListView(generics.ListAPIView):
     serializer_class = FollowSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
