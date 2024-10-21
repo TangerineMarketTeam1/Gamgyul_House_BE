@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from search.serializers import ProfileSearchSerializer
+from accounts.serializers import SimpleUserSerializer
 from .filters import FriendRecommendationFilter
 
 User = get_user_model()
@@ -12,7 +12,7 @@ User = get_user_model()
 
 class FriendRecommendationView(generics.ListAPIView):
 
-    serializer_class = ProfileSearchSerializer
+    serializer_class = SimpleUserSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = FriendRecommendationFilter
@@ -22,7 +22,7 @@ class FriendRecommendationView(generics.ListAPIView):
         description="현재 로그인한 사용자에게 최대 15명의 친구를 추천합니다. 추천 기준은 공통 팔로워, 공통 관심사(해시태그), 인기도 등입니다.",
         responses={
             status.HTTP_200_OK: OpenApiResponse(
-                response=ProfileSearchSerializer(many=True),
+                response=SimpleUserSerializer(many=True),
                 description="추천된 사용자 목록",
             ),
             status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
