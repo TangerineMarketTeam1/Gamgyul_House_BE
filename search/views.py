@@ -4,7 +4,6 @@ from django_filters import rest_framework as filters
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiParameter,
@@ -22,7 +21,6 @@ User = get_user_model()
 
 class ProfileSearchView(generics.ListAPIView):
     serializer_class = SimpleUserSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = ProfileFilter
