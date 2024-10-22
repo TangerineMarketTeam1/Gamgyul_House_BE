@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import ValidationError
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -19,10 +18,20 @@ User = get_user_model()
 
 
 class ProfileDetailView(generics.RetrieveAPIView):
+    """사용자 프로필 세부 정보를 조회하는 뷰.
+
+    이 뷰는 지정된 사용자 ID에 해당하는 프로필 정보를 반환합니다.
+    인증된 사용자만 접근할 수 있습니다.
+
+    Attributes:
+        queryset: 모든 User 객체를 포함하는 쿼리셋.
+        serializer_class: 프로필 정보를 직렬화하는데 사용되는 시리얼라이저.
+        permission_classes: 뷰에 접근하기 위해 필요한 권한.
+        lookup_field: 사용자를 식별하는데 사용되는 필드.
+    """
 
     queryset = User.objects.all()
     serializer_class = ProfileSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_field = "id"
 
@@ -61,16 +70,39 @@ class ProfileDetailView(generics.RetrieveAPIView):
         tags=["profile"],
     )
     def get(self, request, *args, **kwargs):
+        """프로필 정보를 조회합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 프로필 정보를 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
 
 class ProfileUpdateView(generics.UpdateAPIView):
+    """사용자 프로필 업데이트 뷰.
+
+    이 뷰는 현재 로그인한 사용자의 프로필 정보를 업데이트합니다.
+    인증된 사용자만 접근할 수 있습니다.
+
+    Attributes:
+        serializer_class: 프로필 업데이트에 사용되는 시리얼라이저.
+        permission_classes: 뷰에 접근하기 위해 필요한 권한.
+    """
 
     serializer_class = ProfileUpdateSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        """현재 요청을 보낸 사용자 객체를 반환합니다.
+
+        Returns:
+            User: 현재 인증된 사용자 객체.
+        """
         return self.request.user
 
     @extend_schema(
@@ -80,6 +112,16 @@ class ProfileUpdateView(generics.UpdateAPIView):
         tags=["profile"],
     )
     def get(self, request, *args, **kwargs):
+        """현재 사용자의 프로필 정보를 조회합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 프로필 정보를 포함한 HTTP 응답.
+        """
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -102,7 +144,16 @@ class ProfileUpdateView(generics.UpdateAPIView):
         tags=["profile"],
     )
     def put(self, request, *args, **kwargs):
-        """전체 업데이트"""
+        """사용자 프로필 정보를 전체 업데이트합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 업데이트된 프로필 정보를 포함한 HTTP 응답.
+        """
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
@@ -122,16 +173,43 @@ class ProfileUpdateView(generics.UpdateAPIView):
         tags=["profile"],
     )
     def patch(self, request, *args, **kwargs):
-        """부분 업데이트"""
+        """사용자 프로필 정보를 부분적으로 업데이트합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 부분 업데이트된 프로필 정보를 포함한 HTTP 응답.
+        """
         return super().partial_update(request, *args, **kwargs)
 
 
 class PrivacySettingsView(generics.RetrieveUpdateAPIView):
+    """사용자 프라이버시 설정 뷰.
+
+    이 뷰는 사용자의 프라이버시 설정을 조회하고 업데이트합니다.
+    인증된 사용자만 자신의 설정에 접근할 수 있습니다.
+
+    Attributes:
+        serializer_class: 프라이버시 설정을 직렬화하는데 사용되는 시리얼라이저.
+        permission_classes: 뷰에 접근하기 위해 필요한 권한.
+    """
+
     serializer_class = PrivacySettingsSerializer
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        """현재 요청에 해당하는 PrivacySettings 객체를 반환합니다.
+
+        Returns:
+            PrivacySettings: 요청된 사용자의 프라이버시 설정 객체.
+
+        Raises:
+            PermissionDenied: 요청한 사용자가 설정의 소유자가 아닌 경우.
+            Http404: 요청된 사용자를 찾을 수 없는 경우.
+        """
         user_id = self.kwargs.get("user_id")
         user = get_object_or_404(User, id=user_id)
 
@@ -162,6 +240,16 @@ class PrivacySettingsView(generics.RetrieveUpdateAPIView):
         tags=["profile"],
     )
     def get(self, request, *args, **kwargs):
+        """현재 사용자의 프라이버시 설정을 조회합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 프라이버시 설정 정보를 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
     @extend_schema(
@@ -209,6 +297,16 @@ class PrivacySettingsView(generics.RetrieveUpdateAPIView):
         tags=["profile"],
     )
     def put(self, request, *args, **kwargs):
+        """사용자의 프라이버시 설정을 전체 업데이트합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 업데이트된 프라이버시 설정 정보를 포함한 HTTP 응답.
+        """
         return self.update(request, *args, **kwargs)
 
     @extend_schema(
@@ -237,9 +335,32 @@ class PrivacySettingsView(generics.RetrieveUpdateAPIView):
         tags=["profile"],
     )
     def patch(self, request, *args, **kwargs):
+        """사용자의 프라이버시 설정을 부분적으로 업데이트합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 부분 업데이트된 프라이버시 설정 정보를 포함한 HTTP 응답.
+        """
         return self.partial_update(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
+        """프라이버시 설정을 업데이트합니다.
+
+        Args:
+            request: HTTP 요청 객체.
+            *args: 추가 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 업데이트 결과를 포함한 HTTP 응답.
+
+        Raises:
+            ValidationError: 입력 데이터가 유효하지 않은 경우.
+        """
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -258,6 +379,13 @@ class PrivacySettingsView(generics.RetrieveUpdateAPIView):
         )
 
     def perform_update(self, serializer):
+        """프라이버시 설정 업데이트를 수행합니다.
+
+        이 메서드는 검증된 데이터를 사용하여 프라이버시 설정을 실제로 업데이트합니다.
+
+        Args:
+            serializer: 유효성이 검증된 시리얼라이저 인스턴스.
+        """
         instance = serializer.instance
         validated_data = serializer.validated_data
         privacy_settings = validated_data.get("privacy_settings", {})

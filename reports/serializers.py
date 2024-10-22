@@ -6,6 +6,16 @@ import uuid
 
 
 class ReportCreateSerializer(serializers.ModelSerializer):
+    """신고 생성을 위한 시리얼라이저.
+
+    이 시리얼라이저는 신고 생성에 필요한 데이터의 유효성을 검사하고,
+    신고 객체를 생성합니다.
+
+    Attributes:
+        content_type (CharField): 신고 대상 콘텐츠의 타입.
+        object_id (CharField): 신고 대상 객체의 ID.
+    """
+
     content_type = serializers.CharField()
     object_id = serializers.CharField()
 
@@ -14,6 +24,20 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         fields = ["content_type", "object_id", "reason", "description"]
 
     def validate(self, attrs):
+        """입력된 데이터의 유효성을 검사합니다.
+
+        이 메서드는 content_type, object_id, reason의 유효성을 검사하고,
+        신고 대상 객체의 존재 여부를 확인합니다.
+
+        Args:
+            attrs (dict): 유효성을 검사할 속성들의 딕셔너리.
+
+        Returns:
+            dict: 유효성이 검증된 속성들의 딕셔너리.
+
+        Raises:
+            serializers.ValidationError: 유효성 검사에 실패한 경우 발생합니다.
+        """
         content_type_str = attrs.get("content_type")
         object_id = attrs.get("object_id")
         reason = attrs.get("reason")
@@ -46,6 +70,17 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        """검증된 데이터로 새로운 Report 객체를 생성합니다.
+
+        이 메서드는 현재 요청을 보낸 사용자를 신고자로 설정하고,
+        새로운 Report 객체를 생성합니다.
+
+        Args:
+            validated_data (dict): 유효성이 검증된 데이터의 딕셔너리.
+
+        Returns:
+            Report: 새로 생성된 Report 객체.
+        """
         reporter = self.context["request"].user
 
         validated_data["reporter"] = reporter
