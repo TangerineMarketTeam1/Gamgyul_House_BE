@@ -197,8 +197,37 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS 설정 (환경 변수에서 가져오도록 수정)
+CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서만 사용
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5500", "http://127.0.0.1:5500"]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
+
+# 추가 CORS 설정
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# 이 설정도 추가
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 
 # Crispy Forms 설정
 CRISPY_TEMPLATE_PACK = "bootstrap4"
@@ -233,3 +262,26 @@ SIMPLE_JWT = {
 # imagekit 설정
 IMAGEKIT_DEFAULT_CACHEFILE_STRATEGY = "imagekit.cachefiles.strategies.Optimistic"
 IMAGEKIT_CACHEFILE_DIR = "CACHE/images"
+
+# storages settings
+# STORAGES = {
+#     "default": {
+#         "BACKEND": "storages.backends.s3.S3Storage",
+#         "OPTIONS": {
+#             "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+#             "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+#             "bucket_name": "gamgyulhouse",
+#             "region_name": "ap-northeast-2",
+#             "default_acl": "public-read",
+#             "querystring_auth": False,
+#         },
+#     },
+#     "staticfiles": {
+#         "BACKEND": "storages.backends.s3.S3Storage",
+#         "OPTIONS": {
+#             "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+#             "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+#             "bucket_name": "gamgyulhouse",
+#         },
+#     },
+# }
