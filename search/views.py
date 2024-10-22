@@ -81,27 +81,21 @@ class PostFilter(filters.FilterSet):
         fields = ["q"]
 
     def filter_search(self, queryset, name, value):
-        # Split the search query into words
         words = value.split()
 
-        # Prepare a Q object for non-tag words
         content_query = Q()
-        # Prepare a Q object for tags
         tag_query = Q()
 
         for word in words:
             if word.startswith("#"):
-                # This is a tag
                 tag_query |= Q(tags__name__iexact=word[1:])
             else:
-                # This is a regular word
                 content_query |= (
                     Q(content__icontains=word)
                     | Q(user__username__icontains=word)
                     | Q(location__icontains=word)
                 )
 
-        # Combine both queries
         return queryset.filter(content_query | tag_query).distinct()
 
 
@@ -171,18 +165,15 @@ class ProductFilter(filters.FilterSet):
             ("description", "Description"),
             ("variety", "Variety"),
             ("growing_region", "Growing Region"),
-            ("price", "Price"),
             ("user", "User"),
         ],
         method="filter_by_category",
         label="Category",
     )
-    min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
-    max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
 
     class Meta:
         model = Product
-        fields = ["q", "category", "min_price", "max_price"]
+        fields = ["q", "category"]
 
     def filter_search(self, queryset, name, value):
         category = self.data.get("category", "all")
@@ -195,15 +186,9 @@ class ProductFilter(filters.FilterSet):
             return queryset.filter(variety__icontains=value)
         elif category == "growing_region":
             return queryset.filter(growing_region__icontains=value)
-        elif category == "price":
-            try:
-                price = float(value)
-                return queryset.filter(price=price)
-            except ValueError:
-                return queryset.none()
         elif category == "user":
             return queryset.filter(user__username__icontains=value)
-        else:  # 'all' or any other value
+        else:
             return queryset.filter(
                 Q(name__icontains=value)
                 | Q(description__icontains=value)
@@ -213,7 +198,7 @@ class ProductFilter(filters.FilterSet):
             )
 
     def filter_by_category(self, queryset, name, value):
-        # This method is not actually used, but is required by django-filter
+        # 이 메소드는 작동되지 않지만, django에서 요구하기 때문에 빈 메소드로 존재합니다.
         return queryset
 
 
@@ -221,12 +206,12 @@ class ProductSearchView(generics.ListAPIView):
     serializer_class = ProductListSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = ProductFilter
-    ordering_fields = ["created_at", "price"]
+    ordering_fields = ["created_at"]
     ordering = ["-created_at"]
 
     @extend_schema(
         summary="상품 검색",
-        description="상품 이름, 설명, 품종, 재배 지역, 가격, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
+        description="상품 이름, 설명, 품종, 재배 지역, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
         parameters=[
             OpenApiParameter(
                 name="q",
@@ -236,21 +221,9 @@ class ProductSearchView(generics.ListAPIView):
             ),
             OpenApiParameter(
                 name="category",
-                description="검색 카테고리 (name, description, variety, growing_region, price, user, all)",
+                description="검색 카테고리 (name, description, variety, growing_region, user, all)",
                 required=False,
                 type=str,
-            ),
-            OpenApiParameter(
-                name="min_price",
-                description="최소 가격",
-                required=False,
-                type=float,
-            ),
-            OpenApiParameter(
-                name="max_price",
-                description="최대 가격",
-                required=False,
-                type=float,
             ),
         ],
         responses={200: ProductListSerializer(many=True)},
