@@ -162,7 +162,6 @@ class ProductFilter(filters.FilterSet):
     category = filters.ChoiceFilter(
         choices=[
             ("name", "Name"),
-            ("description", "Description"),
             ("variety", "Variety"),
             ("growing_region", "Growing Region"),
             ("user", "User"),
@@ -180,8 +179,6 @@ class ProductFilter(filters.FilterSet):
 
         if category == "name":
             return queryset.filter(name__icontains=value)
-        elif category == "description":
-            return queryset.filter(description__icontains=value)
         elif category == "variety":
             return queryset.filter(variety__icontains=value)
         elif category == "growing_region":
@@ -191,7 +188,6 @@ class ProductFilter(filters.FilterSet):
         else:
             return queryset.filter(
                 Q(name__icontains=value)
-                | Q(description__icontains=value)
                 | Q(variety__icontains=value)
                 | Q(growing_region__icontains=value)
                 | Q(user__username__icontains=value)
@@ -211,7 +207,7 @@ class ProductSearchView(generics.ListAPIView):
 
     @extend_schema(
         summary="상품 검색",
-        description="상품 이름, 설명, 품종, 재배 지역, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
+        description="상품 이름, 품종, 재배 지역, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
         parameters=[
             OpenApiParameter(
                 name="q",
@@ -221,7 +217,7 @@ class ProductSearchView(generics.ListAPIView):
             ),
             OpenApiParameter(
                 name="category",
-                description="검색 카테고리 (name, description, variety, growing_region, user, all)",
+                description="검색 카테고리 (name, variety, growing_region, user, all)",
                 required=False,
                 type=str,
             ),
@@ -234,7 +230,6 @@ class ProductSearchView(generics.ListAPIView):
                     {
                         "id": 1,
                         "name": "샘플 상품",
-                        "price": "10000.00",
                         "user": "johndoe",
                         "stock": 100,
                         "image": "http://example.com/media/products/sample.jpg",
