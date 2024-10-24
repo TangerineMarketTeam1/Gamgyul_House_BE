@@ -223,12 +223,12 @@ class ProductSearchView(generics.ListAPIView):
     serializer_class = ProductListSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = ProductFilter
-    ordering_fields = ["created_at", "price"]
+    ordering_fields = ["created_at"]
     ordering = ["-created_at"]
 
     @extend_schema(
         summary="상품 검색",
-        description="상품 이름, 설명, 품종, 재배 지역, 가격, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
+        description="상품 이름, 품종, 재배 지역, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
         parameters=[
             OpenApiParameter(
                 name="q",
@@ -238,21 +238,9 @@ class ProductSearchView(generics.ListAPIView):
             ),
             OpenApiParameter(
                 name="category",
-                description="검색 카테고리 (name, description, variety, growing_region, price, user, all)",
+                description="검색 카테고리 (name, variety, growing_region, user, all)",
                 required=False,
                 type=str,
-            ),
-            OpenApiParameter(
-                name="min_price",
-                description="최소 가격",
-                required=False,
-                type=float,
-            ),
-            OpenApiParameter(
-                name="max_price",
-                description="최대 가격",
-                required=False,
-                type=float,
             ),
         ],
         responses={200: ProductListSerializer(many=True)},
@@ -263,7 +251,6 @@ class ProductSearchView(generics.ListAPIView):
                     {
                         "id": 1,
                         "name": "샘플 상품",
-                        "price": "10000.00",
                         "user": "johndoe",
                         "stock": 100,
                         "image": "http://example.com/media/products/sample.jpg",

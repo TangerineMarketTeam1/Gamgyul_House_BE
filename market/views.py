@@ -129,7 +129,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = serializer.save()
         images_to_delete = self.request.data.get("images_to_delete", [])
 
-        # 문자열로 전달된 경우 리스트로 변환
         if isinstance(images_to_delete, str):
             images_to_delete = [images_to_delete]
 
