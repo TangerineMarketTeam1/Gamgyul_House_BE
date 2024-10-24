@@ -2,10 +2,18 @@ import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from taggit.managers import TaggableManager
+from taggit.models import TaggedItemBase
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 
 User = get_user_model()
+
+
+class UUIDTaggedItem(TaggedItemBase):
+    """UUID 기반의 커스텀 TaggedItem 모델"""
+
+    content_object = models.ForeignKey("Post", on_delete=models.CASCADE)
+    object_id = models.UUIDField(default=uuid.uuid4, db_index=True)
 
 
 class Post(models.Model):
@@ -17,7 +25,7 @@ class Post(models.Model):
     location = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    tags = TaggableManager(blank=True)
+    tags = TaggableManager(through=UUIDTaggedItem, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
