@@ -3,11 +3,11 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from chats.models import *
-from comments.models import *
-from follow.models import *
-from likes.models import *
-from notifications.models import *
+from chats.models import Message, WebSocketConnection
+from comments.models import Comment
+from follow.models import Follow
+from likes.models import Like
+from notifications.models import Notification
 
 logger = logging.getLogger(__name__)
 

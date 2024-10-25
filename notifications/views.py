@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from uuid import UUID
-from notifications.models import *
-from notifications.serializers import *
+from notifications.models import Notification
+from notifications.serializers import NotificationSerializer
 
 
 class NotificationViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,5 @@
 import json
-from django.urls import reverse, re_path
+from django.urls import re_path
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase
@@ -8,12 +8,12 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from notifications.consumers import NotificationConsumer
-from chats.models import *
-from comments.models import *
-from follow.models import *
-from likes.models import *
-from notifications.models import *
-from posts.models import *
+from chats.models import ChatRoom, Message
+from comments.models import Comment
+from follow.models import Follow
+from likes.models import Like
+from notifications.models import Notification
+from posts.models import Post
 
 User = get_user_model()
 

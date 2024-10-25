@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from chats.models import *
+from chats.models import ChatRoom, Message
 
 User = get_user_model()
 

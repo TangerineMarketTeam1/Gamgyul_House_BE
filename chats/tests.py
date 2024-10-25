@@ -1,4 +1,4 @@
-import json, uuid
+import json
 from django.urls import reverse, re_path
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -8,8 +8,8 @@ from asgiref.sync import sync_to_async
 from channels.auth import AuthMiddlewareStack
 from rest_framework_simplejwt.tokens import RefreshToken
 from channels.generic.websocket import AsyncWebsocketConsumer
-from chats.models import *
-from chats.consumers import *
+from chats.models import ChatRoom, Message
+from chats.consumers import ChatConsumer
 
 User = get_user_model()
 

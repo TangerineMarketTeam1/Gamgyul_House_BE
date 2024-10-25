@@ -7,8 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from uuid import UUID
-from chats.models import *
-from chats.serializers import *
+from chats.models import ChatRoom, Message, WebSocketConnection
+from chats.serializers import ChatRoomSerializer, MessageSerializer
 
 User = get_user_model()
 
