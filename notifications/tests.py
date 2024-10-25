@@ -1,7 +1,6 @@
 import json
 from django.urls import reverse, re_path
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
+from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase
 from asgiref.sync import sync_to_async
@@ -14,6 +13,7 @@ from comments.models import *
 from follow.models import *
 from likes.models import *
 from notifications.models import *
+from posts.models import *
 
 User = get_user_model()
 
@@ -153,6 +153,78 @@ class NotificationTestCase(TransactionTestCase):
         self.assertIn(
             "notification", response, "댓글 알림 메시지가 수신되지 않았습니다."
         )
+        self.assertEqual(response["notification"], notification.message)
+
+        await communicator.disconnect()
+
+    async def test_follow_notification_creation(self):
+        """
+        다른 사용자가 나를 팔로우할 때 알림 생성 및 WebSocket 전송 테스트
+        """
+
+        # 팔로우 생성 (post_save 신호가 자동으로 발동됨)
+        await sync_to_async(Follow.objects.create)(
+            follower=self.user2, following=self.user1
+        )
+
+        # 알림 생성 확인
+        notification = await sync_to_async(
+            Notification.objects.filter(
+                recipient=self.user1, notification_type="follow"
+            ).first
+        )()
+        self.assertIsNotNone(notification, "팔로우 알림이 생성되지 않았습니다.")
+
+        websocket_url = f"/ws/notifications/"
+        communicator = WebsocketCommunicator(test_application, websocket_url)
+
+        connected, _ = await communicator.connect()
+        self.assertTrue(
+            connected, f"WebSocket 연결에 실패했습니다. 경로: {websocket_url}"
+        )
+
+        # WebSocket 메시지 전송 및 알림 수신 확인
+        await communicator.send_json_to({"notification": notification.message})
+        response = await communicator.receive_json_from()
+
+        self.assertIn(
+            "notification", response, "팔로우 알림 메시지가 수신되지 않았습니다."
+        )
+        self.assertEqual(response["notification"], notification.message)
+
+        await communicator.disconnect()
+
+    async def test_message_notification_creation(self):
+        """
+        새로운 메시지가 도착했을 때 알림 생성 및 WebSocket 전송 테스트
+        """
+
+        # 메시지 생성
+        await sync_to_async(Message.objects.create)(
+            chat_room=self.chat_room, sender=self.user2, content="Hello!"
+        )
+
+        # 알림 생성 확인
+        notification = await sync_to_async(
+            Notification.objects.filter(
+                recipient=self.user1, notification_type="message"
+            ).first
+        )()
+        self.assertIsNotNone(notification, "메시지 알림이 생성되지 않았습니다.")
+
+        websocket_url = f"/ws/notifications/"
+        communicator = WebsocketCommunicator(test_application, websocket_url)
+
+        connected, _ = await communicator.connect()
+        self.assertTrue(
+            connected, f"WebSocket 연결에 실패했습니다. 경로: {websocket_url}"
+        )
+
+        # WebSocket 메시지 전송 및 알림 수신 확인
+        await communicator.send_json_to({"notification": notification.message})
+        response = await communicator.receive_json_from()
+
+        self.assertIn("notification", response, "메시지 알림이 수신되지 않았습니다.")
         self.assertEqual(response["notification"], notification.message)
 
         await communicator.disconnect()

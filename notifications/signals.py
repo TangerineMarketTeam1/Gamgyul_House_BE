@@ -1,3 +1,4 @@
+import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
@@ -8,6 +9,8 @@ from follow.models import *
 from likes.models import *
 from notifications.models import *
 
+logger = logging.getLogger(__name__)
+
 
 @receiver(post_save, sender=Message)
 def create_notification_for_new_message(sender, instance, created, **kwargs):
@@ -17,7 +20,7 @@ def create_notification_for_new_message(sender, instance, created, **kwargs):
         recipients = chat_room.participants.exclude(id=instance.sender.id)
 
         for recipient in recipients:
-            # 사용자의 마지막 WebSocket 연결 종료 시간을 가져옴
+            # WebSocket 연결 상태 확인
             last_connection = (
                 WebSocketConnection.objects.filter(user=recipient, chat_room=chat_room)
                 .order_by("-disconnected_at")
@@ -25,26 +28,29 @@ def create_notification_for_new_message(sender, instance, created, **kwargs):
             )
 
             if not last_connection or last_connection.disconnected_at is None:
-                # WebSocket이 연결되어 있지 않으면 알림 생성
-                continue
-            elif last_connection.disconnected_at < instance.sent_at:
-                # WebSocket 연결 종료 후 메시지가 온 경우에만 알림 생성
-                if not Notification.objects.filter(
+                logger.info(f"WebSocket not connected for {recipient.username}")
+                # WebSocket 연결이 없더라도 알림은 생성됨
+            elif last_connection.disconnected_at >= instance.sent_at:
+                logger.info(
+                    f"WebSocket disconnected after message sent for {recipient.username}"
+                )
+
+            if not Notification.objects.filter(
+                recipient=recipient,
+                sender=instance.sender,
+                notification_type="message",
+                related_object_id=instance.id,
+            ).exists():
+                notification = Notification.objects.create(
                     recipient=recipient,
                     sender=instance.sender,
                     notification_type="message",
+                    message=f"{instance.sender.username}님이 새로운 메시지를 보냈습니다.",
                     related_object_id=instance.id,
-                ).exists():
-                    notification = Notification.objects.create(
-                        recipient=recipient,
-                        sender=instance.sender,
-                        notification_type="message",
-                        message=f"{instance.sender.username}님이 새로운 메시지를 보냈습니다.",
-                        related_object_id=instance.id,
-                    )
-                    send_notification_via_websocket(
-                        Notification, notification, created=True
-                    )
+                )
+                send_notification_via_websocket(
+                    Notification, notification, created=True
+                )
 
 
 @receiver(post_save, sender=Comment)
@@ -115,7 +121,10 @@ def send_notification_via_websocket(sender, instance, created, **kwargs):
         channel_layer = get_channel_layer()
         recipient_id = str(instance.recipient.id)
 
-        async_to_sync(channel_layer.group_send)(
-            f"user_{recipient_id}_notifications",
-            {"type": "send_notification", "notification": instance.message},
-        )
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{recipient_id}_notifications",
+                {"type": "send_notification", "notification": instance.message},
+            )
+        except Exception as e:
+            logger.error(f"WebSocket 전송 실패: {str(e)}")
