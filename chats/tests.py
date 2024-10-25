@@ -1,11 +1,58 @@
-from django.urls import reverse
+import json, uuid
+from django.urls import reverse, re_path
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from channels.routing import URLRouter
+from asgiref.sync import sync_to_async
+from channels.auth import AuthMiddlewareStack
 from rest_framework_simplejwt.tokens import RefreshToken
-from chats.models import ChatRoom, Message
+from channels.generic.websocket import AsyncWebsocketConsumer
+from chats.models import *
+from chats.consumers import *
 
 User = get_user_model()
+
+
+class MockChatConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket 연결을 테스트하기 위한 MockChatConsumer.
+    메시지 수신 시 읽음 상태로 업데이트
+    """
+
+    async def connect(self):
+        await self.accept()
+
+    async def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
+        message = data.get("message")
+        message_id = data.get("message_id")
+
+        # 메시지의 is_read 상태를 업데이트
+        if message_id:
+            await sync_to_async(Message.objects.filter(id=message_id).update)(
+                is_read=True
+            )
+
+        # 메시지 전송
+        await self.send(
+            text_data=json.dumps(
+                {"message": message, "message_id": message_id, "status": "received"}
+            )
+        )
+
+    async def disconnect(self, close_code):
+        pass
+
+
+# WebSocket 라우팅 설정
+application = AuthMiddlewareStack(
+    URLRouter(
+        [
+            re_path(r"ws/chat/(?P<room_id>[0-9a-f-]+)/$", ChatConsumer.as_asgi()),
+        ]
+    )
+)
 
 
 class ChatRoomTestCase(APITestCase):
@@ -50,16 +97,9 @@ class ChatRoomTestCase(APITestCase):
         data = {"participants": ["user2"]}  # user1은 자동으로 추가됨
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        # 채팅방을 새로고침하여 시그널에 의해 업데이트된 이름을 확인
-        chat_room_id = response.data["id"]
-        chat_room = ChatRoom.objects.get(id=chat_room_id)
-        chat_room.refresh_from_db()  # 데이터베이스에서 최신 상태로 새로고침
-
-        # 참가자 이름이 알파벳 순으로 정렬되어야 함
-        participant_names = sorted(["user1", "user2"])  # 예상 이름을 정렬된 상태로 만듦
-        expected_name = f"{', '.join(participant_names)}의 대화"
-        self.assertEqual(chat_room.name, expected_name)
+        self.assertEqual(ChatRoom.objects.count(), 1)
+        expected_name = "user1, user2의 대화"
+        self.assertEqual(response.data["name"], expected_name)
 
     def test_duplicate_chatroom_creation(self):
         """
@@ -122,8 +162,6 @@ class ChatRoomTestCase(APITestCase):
         """
         chatroom = ChatRoom.objects.create()
         chatroom.participants.set([self.user1, self.user2])
-
-        # user1이 보낸 메시지 (초기 상태에서는 읽지 않음)
         message = Message.objects.create(
             chat_room=chatroom, sender=self.user1, content="Hello!"
         )

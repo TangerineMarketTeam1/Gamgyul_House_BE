@@ -2,9 +2,6 @@ import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -20,32 +17,19 @@ class ChatRoom(models.Model):
         verbose_name = "Chat Room"
         verbose_name_plural = "Chat Rooms"
 
-    def clean(self):
-        """
-        참가자가 두 명을 초과할 경우 ValidationError 발생
-        """
-        if self.participants.count() > 2:
-            raise ValidationError("참가자가 2명을 초과할 수 없습니다.")
-
     def save(self, *args, **kwargs):
-        self.clean()
+        """
+        참여자 이름을 알파벳 순으로 정렬하여 채팅방 이름을 생성.
+        """
         super().save(*args, **kwargs)
+        participant_names = ", ".join(
+            sorted(user.username for user in self.participants.all())
+        )
+        self.name = f"{participant_names}의 대화"
+        super().save(update_fields=["name"])
 
     def __str__(self):
-        return self.name if self.name else f"채팅방 {self.id}"
-
-
-@receiver(post_save, sender=ChatRoom)
-def set_chat_room_name(sender, instance, **kwargs):
-    """
-    참가자들의 이름을 알파벳 순으로 정렬하여 채팅방 이름을 생성
-    """
-    if not instance.name and instance.participants.count() == 2:
-        participant_names = ", ".join(
-            sorted([user.username for user in instance.participants.all()])
-        )
-        instance.name = f"{participant_names}의 대화"
-        instance.save(update_fields=["name"])
+        return self.name
 
 
 class Message(models.Model):
