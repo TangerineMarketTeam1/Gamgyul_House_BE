@@ -147,8 +147,26 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
+# user custom models
+AUTH_USER_MODEL = "accounts.CustomUser"
+
 # 소셜 로그인용
 SITE_ID = 1
+
+# allauth settings
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+
+REST_AUTH = {
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "my-app-auth",
+    "JWT_AUTH_REFRESH_COOKIE": "my-refresh-token",
+    "JWT_AUTH_HTTPONLY": False,
+    "JWT_AUTH_SAMESITE": "None",
+    "SESSION_LOGIN": False,
+}
 
 # 구글 소셜 계정 설정
 SOCIALACCOUNT_PROVIDERS = {
@@ -165,7 +183,9 @@ SOCIALACCOUNT_PROVIDERS = {
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_CALLBACK_URI = "http://3.36.50.126/accounts/google/login/callback/"
+GOOGLE_CALLBACK_URI = (
+    "http://127.0.0.1:5500/templates/google-callback.html"  # 프론트 callback url 지정
+)
 
 # SMTP(Simple Mail Transfer ProtocoL) 설정
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -202,6 +222,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
+    "https://accounts.google.com",
 ]
 
 # 추가 CORS 설정
@@ -232,25 +253,7 @@ CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 # Crispy Forms 설정
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-# user custom models
-AUTH_USER_MODEL = "accounts.CustomUser"
-
-# allauth settings
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
-
-REST_AUTH = {
-    "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "my-app-auth",
-    "JWT_AUTH_REFRESH_COOKIE": "my-refresh-token",
-    "JWT_AUTH_HTTPONLY": False,
-    "JWT_AUTH_SAMESITE": "None",
-    "SESSION_LOGIN": False,
-}
-
-# jwt 설정
+# JWT 설정
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
