@@ -1,5 +1,5 @@
 from django.contrib import admin
-from chats.models import *
+from chats.models import ChatRoom, Message, WebSocketConnection
 
 
 @admin.register(ChatRoom)
