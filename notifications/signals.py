@@ -1,3 +1,4 @@
+import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
@@ -8,6 +9,8 @@ from follow.models import *
 from likes.models import *
 from notifications.models import *
 
+logger = logging.getLogger(__name__)
+
 
 @receiver(post_save, sender=Message)
 def create_notification_for_new_message(sender, instance, created, **kwargs):
@@ -17,7 +20,7 @@ def create_notification_for_new_message(sender, instance, created, **kwargs):
         recipients = chat_room.participants.exclude(id=instance.sender.id)
 
         for recipient in recipients:
-            # 사용자의 마지막 WebSocket 연결 종료 시간을 가져옴
+            # WebSocket 연결 상태 확인
             last_connection = (
                 WebSocketConnection.objects.filter(user=recipient, chat_room=chat_room)
                 .order_by("-disconnected_at")
@@ -25,10 +28,12 @@ def create_notification_for_new_message(sender, instance, created, **kwargs):
             )
 
             if not last_connection or last_connection.disconnected_at is None:
-                print(f"WebSocket not connected for {recipient}")
-                # 알림을 생성하되, WebSocket 연결이 없어도 생성
+                logger.info(f"WebSocket not connected for {recipient.username}")
+                # WebSocket 연결이 없더라도 알림은 생성됨
             elif last_connection.disconnected_at >= instance.sent_at:
-                print(f"WebSocket disconnected after message sent for {recipient}")
+                logger.info(
+                    f"WebSocket disconnected after message sent for {recipient.username}"
+                )
 
             if not Notification.objects.filter(
                 recipient=recipient,
@@ -122,4 +127,4 @@ def send_notification_via_websocket(sender, instance, created, **kwargs):
                 {"type": "send_notification", "notification": instance.message},
             )
         except Exception as e:
-            print(f"WebSocket 전송 실패: {str(e)}")
+            logger.error(f"WebSocket 전송 실패: {str(e)}")
