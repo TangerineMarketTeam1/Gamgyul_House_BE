@@ -234,10 +234,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     """사용자 프로필 정보를 업데이트하기 위한 serializer.
 
-    이 serializer는 사용자의 username, bio, profile_image를 업데이트하는 데 사용됩니다.
+    이 serializer는 사용자의 id, username, bio, profile_image를 다룹니다.
     username과 profile_image 필드는 선택적입니다.
 
     Attributes:
+        id (UUID): 사용자의 고유 식별자 (읽기 전용).
+        email (str): 사용자의 이메일 주소 (읽기 전용).
         username (str): 사용자의 새 사용자명 (선택적).
         bio (str): 사용자의 새 자기소개.
         profile_image (InMemoryUploadedFile): 사용자의 새 프로필 이미지 (선택적).
@@ -246,14 +248,38 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "id",
+            "email",
             "username",
             "bio",
             "profile_image",
         ]
+        read_only_fields = ["id", "email"]  # id와 email은 읽기 전용
         extra_kwargs = {
             "username": {"required": False},
             "profile_image": {"required": False},
         }
+
+    def to_representation(self, instance):
+        """인스턴스를 직렬화된 표현으로 변환합니다.
+
+        프로필 이미지 URL을 전체 URL로 변환하여 반환합니다.
+
+        Args:
+            instance (User): 변환할 사용자 객체.
+
+        Returns:
+            dict: 직렬화된 사용자 데이터.
+        """
+        data = super().to_representation(instance)
+        if data.get("profile_image"):
+            if not data["profile_image"].startswith("http"):
+                request = self.context.get("request")
+                if request is not None:
+                    data["profile_image"] = request.build_absolute_uri(
+                        data["profile_image"]
+                    )
+        return data
 
     def validate_username(self, value):
         """username의 유일성을 검증합니다.
