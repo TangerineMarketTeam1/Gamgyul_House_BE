@@ -2,7 +2,6 @@ import uuid
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 from django.db import models
-from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from datetime import datetime
 
@@ -27,9 +26,6 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
-
-    def average_rating(self):
-        return self.reviews.aggregate(Avg("rating"))["rating__avg"]
 
 
 def upload_to(instance, filename):

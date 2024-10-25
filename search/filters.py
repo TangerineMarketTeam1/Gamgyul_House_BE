@@ -90,34 +90,26 @@ class PostFilter(filters.FilterSet):
 class ProductFilter(filters.FilterSet):
     """제품 검색을 위한 필터 세트.
 
-    이 필터는 제품 이름, 설명, 품종, 재배 지역, 가격, 그리고 사용자를 기반으로 제품을 검색합니다.
+    이 필터는 제품 이름, 품종, 재배 지역, 그리고 사용자를 기반으로 제품을 검색합니다.
 
     Attributes:
         q (CharFilter): 검색 쿼리 필터.
         category (ChoiceFilter): 검색 카테고리 선택 필터.
-        min_price (NumberFilter): 최소 가격 필터.
-        max_price (NumberFilter): 최대 가격 필터.
     """
 
     q = filters.CharFilter(method="filter_search", label="Search")
     category = filters.ChoiceFilter(
         choices=[
             ("name", "Name"),
-            ("description", "Description"),
-            ("variety", "Variety"),
-            ("growing_region", "Growing Region"),
-            ("price", "Price"),
             ("user", "User"),
         ],
         method="filter_by_category",
         label="Category",
     )
-    min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
-    max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
 
     class Meta:
         model = Product
-        fields = ["q", "category", "min_price", "max_price"]
+        fields = ["q", "category"]
 
     def filter_search(self, queryset, name, value):
         """검색 쿼리와 선택된 카테고리를 기반으로 제품을 필터링합니다.
@@ -134,40 +126,19 @@ class ProductFilter(filters.FilterSet):
 
         if category == "name":
             return queryset.filter(name__icontains=value)
-        elif category == "description":
-            return queryset.filter(description__icontains=value)
-        elif category == "variety":
-            return queryset.filter(variety__icontains=value)
-        elif category == "growing_region":
-            return queryset.filter(growing_region__icontains=value)
-        elif category == "price":
-            try:
-                price = float(value)
-                return queryset.filter(price=price)
-            except ValueError:
-                return queryset.none()
         elif category == "user":
             return queryset.filter(user__username__icontains=value)
         else:
             return queryset.filter(
-                Q(name__icontains=value)
-                | Q(description__icontains=value)
-                | Q(variety__icontains=value)
-                | Q(growing_region__icontains=value)
-                | Q(user__username__icontains=value)
+                Q(name__icontains=value) | Q(user__username__icontains=value)
             )
 
     def filter_by_category(self, queryset, name, value):
         """카테고리별 필터링을 위한 메서드.
 
-        이 메서드는 현재 구현되어 있지 않으며, 향후 확장을 위해 예약되어 있습니다.
-
-        Args:
-            queryset (QuerySet): 필터링할 기본 쿼리셋.
-            name (str): 필터 이름.
-            value (str): 선택된 카테고리 값.
+        현재는 실제 필터링을 수행하지 않으며, filter_search에서 카테고리 처리를 함.
 
         Returns:
-            QuerySet: 원본 쿼리셋 (현재는 필터링 없음).
+            QuerySet: 원본 쿼리셋.
         """
         return queryset

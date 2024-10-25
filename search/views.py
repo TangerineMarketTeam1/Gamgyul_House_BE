@@ -209,8 +209,8 @@ class PostSearchView(generics.ListAPIView):
 class ProductSearchView(generics.ListAPIView):
     """상품 검색을 위한 API 뷰.
 
-    이 뷰는 상품 이름, 설명, 품종, 재배 지역, 가격, 사용자 이름을 기반으로 상품을 검색하고 결과를 반환합니다.
-    검색 결과는 생성 시간의 역순으로 기본 정렬되며, 생성 시간과 가격으로 정렬할 수 있습니다.
+    이 뷰는 상품 이름과 사용자 이름을 기반으로 상품을 검색하고 결과를 반환합니다.
+    검색 결과는 생성 시간의 역순으로 정렬됩니다.
 
     Attributes:
         serializer_class (Serializer): 응답 데이터 직렬화를 위한 시리얼라이저.
@@ -223,12 +223,12 @@ class ProductSearchView(generics.ListAPIView):
     serializer_class = ProductListSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = ProductFilter
-    ordering_fields = ["created_at", "price"]
+    ordering_fields = ["created_at"]
     ordering = ["-created_at"]
 
     @extend_schema(
         summary="상품 검색",
-        description="상품 이름, 설명, 품종, 재배 지역, 가격, 사용자 이름을 기반으로 상품을 검색합니다. 카테고리를 지정하여 검색할 수 있습니다.",
+        description="상품 이름과 사용자 이름을 기반으로 상품을 검색합니다.",
         parameters=[
             OpenApiParameter(
                 name="q",
@@ -238,21 +238,9 @@ class ProductSearchView(generics.ListAPIView):
             ),
             OpenApiParameter(
                 name="category",
-                description="검색 카테고리 (name, description, variety, growing_region, price, user, all)",
+                description="검색 카테고리 (name, user, all)",
                 required=False,
                 type=str,
-            ),
-            OpenApiParameter(
-                name="min_price",
-                description="최소 가격",
-                required=False,
-                type=float,
-            ),
-            OpenApiParameter(
-                name="max_price",
-                description="최대 가격",
-                required=False,
-                type=float,
             ),
         ],
         responses={200: ProductListSerializer(many=True)},
@@ -263,10 +251,10 @@ class ProductSearchView(generics.ListAPIView):
                     {
                         "id": 1,
                         "name": "샘플 상품",
-                        "price": "10000.00",
                         "user": "johndoe",
                         "stock": 100,
                         "image": "http://example.com/media/products/sample.jpg",
+                        "price": 35000,
                     },
                 ],
                 response_only=True,
@@ -275,40 +263,12 @@ class ProductSearchView(generics.ListAPIView):
         tags=["search"],
     )
     def get(self, request, *args, **kwargs):
-        """GET 요청을 처리하여 상품 검색 결과를 반환합니다.
-
-        이 메서드는 부모 클래스의 get 메서드를 호출하여 검색 결과를 반환합니다.
-
-        Args:
-            request (HttpRequest): 클라이언트의 HTTP 요청 객체.
-            *args: 추가 위치 인자.
-            **kwargs: 추가 키워드 인자.
-
-        Returns:
-            Response: 검색된 상품 목록을 포함한 HTTP 응답.
-        """
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        """검색 대상이 될 기본 쿼리셋을 반환합니다.
-
-        Returns:
-            QuerySet: 모든 상품 객체를 포함하는 쿼리셋.
-        """
         return Product.objects.all()
 
     def filter_queryset(self, queryset):
-        """쿼리셋에 필터를 적용합니다.
-
-        이 메서드는 검색 쿼리 파라미터('q')가 제공된 경우에만 필터링을 수행합니다.
-        검색 쿼리가 없으면 빈 쿼리셋을 반환합니다.
-
-        Args:
-            queryset (QuerySet): 필터링할 원본 쿼리셋.
-
-        Returns:
-            QuerySet: 필터링된 쿼리셋 또는 빈 쿼리셋.
-        """
         filtered_queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
             return queryset.none()
