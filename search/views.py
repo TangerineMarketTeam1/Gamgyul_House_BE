@@ -228,7 +228,7 @@ class ProductSearchView(generics.ListAPIView):
 
     @extend_schema(
         summary="상품 검색",
-        description="상품 이름과 사용자 이름을 기반으로 상품을 검색합니다.",
+        description="상품 이름과 사용자 이름을 기반으로 상품을 검색합니다. 검색어가 없는 경우 전체 상품을 반환합니다.",
         parameters=[
             OpenApiParameter(
                 name="q",
@@ -263,13 +263,38 @@ class ProductSearchView(generics.ListAPIView):
         tags=["search"],
     )
     def get(self, request, *args, **kwargs):
+        """GET 요청을 처리하여 상품 검색 결과를 반환합니다.
+
+        이 메서드는 부모 클래스의 get 메서드를 호출하여 검색 결과를 반환합니다.
+
+        Args:
+            request (HttpRequest): 클라이언트의 HTTP 요청 객체.
+            *args: 추가 위치 인자.
+            **kwargs: 추가 키워드 인자.
+
+        Returns:
+            Response: 검색된 상품 목록을 포함한 HTTP 응답.
+        """
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        """검색 대상이 될 기본 쿼리셋을 반환합니다.
+
+        Returns:
+            QuerySet: 전체 상품 객체를 포함하는 쿼리셋.
+        """
         return Product.objects.all()
 
     def filter_queryset(self, queryset):
-        filtered_queryset = super().filter_queryset(queryset)
+        """쿼리셋에 필터를 적용합니다.
+
+        Args:
+            queryset (QuerySet): 필터링할 원본 쿼리셋.
+
+        Returns:
+            QuerySet: 필터링된 쿼리셋.
+        """
+        queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
-            return queryset.none()
-        return filtered_queryset
+            return queryset
+        return queryset
