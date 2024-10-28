@@ -32,7 +32,7 @@ class LikeView(generics.GenericAPIView):
 
     @extend_schema(
         summary="게시물 좋아요 추가/취소",
-        description="게시물에 좋아요를 추가하거나 취소할 수 있습니다.",
+        description="게시물에 좋아요를 추가하거나 취소합니다. 응답으로 현재 좋아요 상태와 총 좋아요 수를 반환합니다.",
         parameters=[
             OpenApiParameter(
                 name="post_id",
@@ -42,35 +42,41 @@ class LikeView(generics.GenericAPIView):
             )
         ],
         responses={
-            201: OpenApiResponse(description="좋아요 추가 성공"),
-            204: OpenApiResponse(description="좋아요 취소 성공"),
+            200: OpenApiResponse(
+                response={
+                    "type": "object",
+                    "properties": {
+                        "is_liked": {
+                            "type": "boolean",
+                            "description": "현재 좋아요 상태",
+                        },
+                        "likes_count": {
+                            "type": "integer",
+                            "description": "총 좋아요 수",
+                        },
+                    },
+                },
+                description="좋아요 처리 결과",
+            ),
             404: OpenApiResponse(description="게시물 찾을 수 없음"),
         },
         tags=["like"],
     )
     def post(self, request, post_id):
-        """
-        게시물에 좋아요를 추가하거나 취소합니다.
-
-        이미 좋아요가 존재하면 취소하고, 존재하지 않으면 새로 추가합니다.
-
-        Args:
-            request (HttpRequest): HTTP 요청 객체.
-            post_id (UUID): 좋아요를 추가하거나 취소할 게시물의 UUID.
-
-        Returns:
-            Response: HTTP 응답 객체. 좋아요 추가 시 201, 취소 시 204 상태 코드를 반환합니다.
-
-        Raises:
-            Http404: 지정된 UUID의 게시물이 존재하지 않을 경우 발생합니다.
-        """
         post = get_object_or_404(Post, id=post_id)
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
-        if created:
-            return Response(status=status.HTTP_201_CREATED)
-        like.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        is_liked = created
+        if not created:
+            like.delete()
+            is_liked = False
+
+        likes_count = Like.objects.filter(post=post).count()
+
+        return Response(
+            {"is_liked": is_liked, "likes_count": likes_count},
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         summary="좋아요를 누른 사용자 목록 조회",
