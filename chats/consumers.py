@@ -15,11 +15,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"chat_{self.room_id}"
 
-        # room_id가 올바른 UUID 형식인지 검증
-        if not self.is_valid_uuid(self.room_id):
-            await self.close()
-            return
-
         # 사용자 인증 여부 확인
         if not self.scope["user"].is_authenticated:
             await self.close()
