@@ -14,6 +14,7 @@ from posts.models import Post
 from market.models import Product
 from .serializers import PostSearchSerializer
 from market.serializers import ProductListSerializer
+from config.pagination import PageNumberPagination
 
 User = get_user_model()
 
@@ -225,6 +226,7 @@ class ProductSearchView(generics.ListAPIView):
     filterset_class = ProductFilter
     ordering_fields = ["created_at"]
     ordering = ["-created_at"]
+    pagination_class = PageNumberPagination
 
     @extend_schema(
         summary="상품 검색",
