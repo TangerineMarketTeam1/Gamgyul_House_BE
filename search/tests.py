@@ -131,11 +131,11 @@ class TestProductSearch:
         assert response.data["results"][0]["user"] == users["user2"].username
 
     def test_product_search_no_query(self, authenticated_client, products):
-        """검색어 없는 경우 테스트"""
+        """검색어 없는 경우 테스트 - 전체 상품 목록이 반환되어야 함"""
         response = authenticated_client.get(self.url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == 0
+        assert len(response.data["results"]) == len(products)
 
     def test_product_search_no_results(self, authenticated_client, products):
         """검색 결과 없는 경우 테스트"""
