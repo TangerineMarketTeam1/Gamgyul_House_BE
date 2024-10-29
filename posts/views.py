@@ -59,6 +59,14 @@ class PostViewSet(viewsets.ModelViewSet):
             posts = Post.objects.filter(user__in=popular_users)
         return posts.order_by("-created_at")
 
+    def get_serializer_context(self):
+        """
+        serializer에 추가적인 context를 제공합니다.
+        """
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
     @extend_schema(
         summary="게시물 작성",
         description="사용자가 텍스트와 이미지를 포함한 게시물을 작성합니다. ",

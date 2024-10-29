@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from taggit.serializers import TagListSerializerField, TaggitSerializer
 from .models import Post, PostImage
+from likes.models import Like
 from django.contrib.auth import get_user_model
 from accounts.serializers import SimpleUserSerializer
 
@@ -29,6 +30,8 @@ class PostSerializer(TaggitSerializer, serializers.ModelSerializer):
     )
     content = serializers.CharField(required=True)
     tags = TagListSerializerField(required=False)
+    is_liked = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -42,12 +45,27 @@ class PostSerializer(TaggitSerializer, serializers.ModelSerializer):
             "tags",
             "uploaded_images",
             "images",
+            "is_liked",
+            "likes_count",
         ]
         read_only_fields = [
             "user",
             "created_at",
             "updated_at",
+            "is_liked",
+            "likes_count",
         ]
+
+    def get_is_liked(self, obj):
+        """현재 사용자의 좋아요 여부 확인"""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return Like.objects.filter(post=obj, user=request.user).exists()
+        return False
+
+    def get_likes_count(self, obj):
+        """게시물의 총 좋아요 수 반환"""
+        return obj.likes.count()
 
     def create(self, validated_data):
         """게시물 생성 로직"""
