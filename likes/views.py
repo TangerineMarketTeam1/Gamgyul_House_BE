@@ -42,22 +42,8 @@ class LikeView(generics.GenericAPIView):
             )
         ],
         responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "is_liked": {
-                            "type": "boolean",
-                            "description": "현재 좋아요 상태",
-                        },
-                        "likes_count": {
-                            "type": "integer",
-                            "description": "총 좋아요 수",
-                        },
-                    },
-                },
-                description="좋아요 처리 결과",
-            ),
+            201: OpenApiResponse(description="좋아요 추가 성공"),
+            204: OpenApiResponse(description="좋아요 취소 성공"),
             404: OpenApiResponse(description="게시물 찾을 수 없음"),
         },
         tags=["like"],
@@ -66,17 +52,15 @@ class LikeView(generics.GenericAPIView):
         post = get_object_or_404(Post, id=post_id)
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
-        is_liked = created
-        if not created:
+        if created:
+            return Response(
+                {"is_liked": True, "likes_count": post.likes.count()},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            # 이미 존재하는 좋아요를 취소하는 경우
             like.delete()
-            is_liked = False
-
-        likes_count = Like.objects.filter(post=post).count()
-
-        return Response(
-            {"is_liked": is_liked, "likes_count": likes_count},
-            status=status.HTTP_200_OK,
-        )
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="좋아요를 누른 사용자 목록 조회",
