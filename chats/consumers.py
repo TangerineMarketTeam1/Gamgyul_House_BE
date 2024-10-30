@@ -15,23 +15,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_group_name = f"chat_{self.room_id}"
 
-        # 사용자 인증 여부 확인
-        if not self.scope["user"].is_authenticated:
-            await self.close()
+        # 인증 확인
+        if self.scope["user"].is_anonymous:
+            await self.close(code=4001)
             return
 
-        # 사용자가 해당 채팅방에 참여 중인지 확인
-        if await self.is_user_in_room(self.room_id, self.scope["user"]):
-            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-            await self.accept()
+        try:
+            # 채팅방 존재 여부 및 권한 확인
+            if await self.is_user_in_room(self.room_id, self.scope["user"]):
+                await self.channel_layer.group_add(
+                    self.room_group_name, self.channel_name
+                )
+                await self.accept()
 
-            # WebSocket 연결 정보 기록
-            await self.record_connection(self.scope["user"], self.room_id)
-
-            # 읽지 않은 메시지를 모두 읽음 처리
-            await self.mark_messages_as_read(self.room_id, self.scope["user"])
-        else:
-            await self.close()
+                # 연결 성공 메시지 전송
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "connection_established",
+                            "message": "Successfully connected to chat room",
+                        }
+                    )
+                )
+            else:
+                await self.close(code=4002)
+        except Exception as e:
+            print(f"Connection error: {e}")
+            await self.close(code=4003)
 
     async def disconnect(self, close_code):
         """
