@@ -1,15 +1,22 @@
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from django.contrib.auth import get_user_model
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import LoginView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .serializers import CustomLoginSerializer, CustomSocialLoginSerializer
+from .serializers import (
+    CustomLoginSerializer,
+    CustomSocialLoginSerializer,
+    SimpleUserSerializer,
+)
 from profiles.serializers import ProfileSerializer
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
+
+User = get_user_model()
 
 
 class GoogleLogin(SocialLoginView):
@@ -122,3 +129,17 @@ class CurrentUserView(APIView):
         """
         serializer = ProfileSerializer(request.user)
         return Response(serializer.data)
+
+
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+            serializer = SimpleUserSerializer(user)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
