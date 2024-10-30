@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from chats.models import Message
 from posts.models import Post
 
 User = get_user_model()
@@ -29,3 +30,15 @@ class PostSearchSerializer(serializers.ModelSerializer):
 
     def get_tags(self, obj):
         return [tag.name for tag in obj.tags.all()]
+
+
+class MessageSearchSerializer(serializers.ModelSerializer):
+    """
+    메시지 검색 serializer
+    """
+
+    username = serializers.CharField(source="sender.username", read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ["id", "username", "content", "sent_at"]

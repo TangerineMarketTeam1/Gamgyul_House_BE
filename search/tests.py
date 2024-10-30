@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from market.models import Product
+from chats.models import ChatRoom, Message
 
 User = get_user_model()
 
@@ -45,6 +46,14 @@ def users():
 def authenticated_client(api_client, users):
     api_client.force_authenticate(user=users["user1"])
     return api_client
+
+
+@pytest.fixture
+def chat_room(users):
+    """테스트용 채팅방 생성"""
+    chat_room = ChatRoom.objects.create(room_key="test_room")
+    chat_room.participants.set([users["user1"], users["user2"], users["user3"]])
+    return chat_room
 
 
 @pytest.mark.django_db(transaction=True)
@@ -151,3 +160,63 @@ class TestProductSearch:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 2
         assert any("사과" in product["name"] for product in response.data["results"])
+
+
+@pytest.fixture
+def messages(users, chat_room):
+    """채팅방에 테스트 메시지 생성"""
+    messages = [
+        Message.objects.create(
+            chat_room=chat_room,
+            sender=users["user1"],
+            content="안녕하세요. 오늘 날씨가 좋네요.",
+        ),
+        Message.objects.create(
+            chat_room=chat_room,
+            sender=users["user2"],
+            content="오늘은 사과를 먹었어요.",
+        ),
+        Message.objects.create(
+            chat_room=chat_room,
+            sender=users["user3"],
+            content="채팅 테스트 메시지입니다.",
+        ),
+    ]
+    return messages
+
+
+@pytest.mark.django_db(transaction=True)
+class TestMessageSearch:
+    @pytest.fixture(autouse=True)
+    def setup(self, chat_room):
+        self.url = reverse("message_search", args=[chat_room.id])
+
+    def test_message_search_by_content(self, authenticated_client, messages):
+        """메시지 내용으로 검색 테스트"""
+        response = authenticated_client.get(self.url, {"q": "오늘"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 2
+        assert all("오늘" in message["content"] for message in response.data["results"])
+
+    def test_message_search_no_query(self, authenticated_client, messages):
+        """검색어 없는 경우 테스트"""
+        response = authenticated_client.get(self.url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 0
+
+    def test_message_search_no_results(self, authenticated_client, messages):
+        """검색 결과 없는 경우 테스트"""
+        response = authenticated_client.get(self.url, {"q": "없는 내용"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 0
+
+    def test_message_search_all_fields(self, authenticated_client, messages):
+        """전체 필드 검색 테스트"""
+        response = authenticated_client.get(self.url, {"q": "채팅"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 1
+        assert any("채팅" in message["content"] for message in response.data["results"])

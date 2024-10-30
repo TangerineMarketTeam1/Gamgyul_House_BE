@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -9,10 +10,11 @@ from drf_spectacular.utils import (
     OpenApiExample,
 )
 from accounts.serializers import SimpleUserSerializer
-from .filters import ProfileFilter, PostFilter, ProductFilter
+from .filters import ProfileFilter, PostFilter, ProductFilter, MessageFilter
+from chats.models import ChatRoom, Message
 from posts.models import Post
 from market.models import Product
-from .serializers import PostSearchSerializer
+from .serializers import PostSearchSerializer, MessageSearchSerializer
 from market.serializers import ProductListSerializer
 
 User = get_user_model()
@@ -297,4 +299,58 @@ class ProductSearchView(generics.ListAPIView):
         queryset = super().filter_queryset(queryset)
         if not self.request.query_params.get("q"):
             return queryset
+        return queryset
+
+
+class MessageSearchView(generics.ListAPIView):
+    """채팅방 내부의 메시지를 검색하는 API 뷰.
+
+    이 뷰는 특정 채팅방에서 메시지 내용을 기반으로 검색합니다.
+
+    Attributes:
+        serializer_class (Serializer): 응답 데이터 직렬화를 위한 시리얼라이저.
+        filter_backends (tuple): 사용할 필터 백엔드.
+        filterset_class (FilterSet): 쿼리셋 필터링을 위한 필터 클래스.
+    """
+
+    serializer_class = MessageSearchSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = MessageFilter
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="채팅방 메시지 검색",
+        description="특정 채팅방의 메시지를 검색합니다.",
+        parameters=[
+            OpenApiParameter(
+                name="room_id",
+                description="채팅방 ID",
+                required=True,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="q",
+                description="검색 쿼리 (메시지 내용)",
+                required=False,
+                type=str,
+            ),
+        ],
+        responses={200: MessageSearchSerializer(many=True)},
+        tags=["search"],
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        room_id = self.kwargs["room_id"]
+        chat_room = get_object_or_404(ChatRoom, id=room_id)
+        queryset = Message.objects.filter(chat_room=chat_room)
+        print(f"Queryset in get_queryset: {queryset}")
+        return queryset
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        print(f"Queryset after filtering: {queryset}")
+        if not self.request.query_params.get("q"):
+            return queryset.none()
         return queryset
