@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django_filters import rest_framework as filters
+from chats.models import Message
 from posts.models import Post
 from market.models import Product
 
@@ -142,3 +143,34 @@ class ProductFilter(filters.FilterSet):
             QuerySet: 원본 쿼리셋.
         """
         return queryset
+
+
+class MessageFilter(filters.FilterSet):
+    """채팅방 내 메시지 검색을 위한 필터 세트.
+
+    이 필터는 메시지 내용을 기반으로 메시지를 검색합니다.
+
+    Attributes:
+        q (CharFilter): 검색 쿼리 필터.
+    """
+
+    q = filters.CharFilter(method="filter_search", label="Search")
+
+    class Meta:
+        model = Message
+        fields = ["q"]
+
+    def filter_search(self, queryset, name, value):
+        """검색 쿼리를 기반으로 메시지를 필터링합니다.
+
+        Args:
+            queryset (QuerySet): 필터링할 기본 쿼리셋.
+            name (str): 필터 이름 (이 메서드에서는 사용되지 않음).
+            value (str): 검색 쿼리 문자열.
+
+        Returns:
+            QuerySet: 필터링된 메시지 쿼리셋.
+        """
+        if value:
+            return queryset.filter(Q(content__icontains=value)).distinct()
+        return queryset.none()
