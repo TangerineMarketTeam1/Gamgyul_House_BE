@@ -127,10 +127,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         product = serializer.save()
-        images_to_delete = self.request.data.get("images_to_delete", [])
-
-        if isinstance(images_to_delete, str):
-            images_to_delete = [images_to_delete]
+        images_to_delete = self.request.data.getlist("images_to_delete", [])
 
         for full_image_url in images_to_delete:
             try:
