@@ -83,23 +83,39 @@ def test_get_product_detail(api_client, test_user, product_data):
 
 
 @pytest.mark.django_db
-def test_update_product(authenticated_client, test_user, product_data):
+def test_update_product(authenticated_client, test_user, product_data, test_image):
     """상품 수정 테스트"""
     product = Product.objects.create(user=test_user, **product_data)
+    initial_image = ProductImage.objects.create(product=product, image=test_image)
+
+    new_test_image = SimpleUploadedFile(
+        "new_test_image.gif",
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        content_type="image/gif",
+    )
+
     updated_data = {
         "name": "수정된 상품",
         "price": "20000.00",
+        "images_to_delete": [initial_image.image.url],
+        "image": [new_test_image],
     }
 
     response = authenticated_client.patch(
         reverse("product-detail", kwargs={"id": product.id}),
         updated_data,
-        format="json",
+        format="multipart",
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data["name"] == "수정된 상품"
     assert response.data["price"] == "20000.00"
+
+    product.refresh_from_db()
+    assert product.images.count() == 1
+    assert not ProductImage.objects.filter(id=initial_image.id).exists()
+
+    assert product.images.exists()
 
 
 @pytest.mark.django_db
