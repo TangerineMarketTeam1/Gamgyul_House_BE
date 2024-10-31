@@ -347,12 +347,10 @@ class MessageSearchView(generics.ListAPIView):
         room_id = self.kwargs["room_id"]
         chat_room = get_object_or_404(ChatRoom, id=room_id)
         queryset = Message.objects.filter(chat_room=chat_room)
-        print(f"Queryset in get_queryset: {queryset}")
         return queryset
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
-        print(f"Queryset after filtering: {queryset}")
         if not self.request.query_params.get("q"):
             return queryset.none()
         return queryset

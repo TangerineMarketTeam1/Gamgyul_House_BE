@@ -38,7 +38,10 @@ class MessageSearchSerializer(serializers.ModelSerializer):
     """
 
     username = serializers.CharField(source="sender.username", read_only=True)
+    profile_image = serializers.ImageField(
+        source="sender.profile_image", read_only=True
+    )
 
     class Meta:
         model = Message
-        fields = ["id", "username", "content", "sent_at"]
+        fields = ["id", "username", "content", "sent_at", "profile_image"]
