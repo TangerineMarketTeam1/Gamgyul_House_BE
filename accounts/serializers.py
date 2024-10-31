@@ -1,7 +1,9 @@
+from django.contrib.auth import get_user_model
+
 from dj_rest_auth.serializers import LoginSerializer
 from dj_rest_auth.registration.serializers import SocialLoginSerializer
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
 from .models import CustomUser
 
 

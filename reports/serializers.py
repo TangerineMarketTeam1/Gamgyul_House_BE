@@ -1,8 +1,10 @@
-from rest_framework import serializers
+import uuid
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
+from rest_framework import serializers
+
 from .models import Report
-import uuid
 
 
 class ReportCreateSerializer(serializers.ModelSerializer):

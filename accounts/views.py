@@ -1,22 +1,24 @@
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import LoginView
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from profiles.serializers import ProfileSerializer
 from .serializers import (
     CustomLoginSerializer,
     CustomSocialLoginSerializer,
     SimpleUserSerializer,
 )
-from profiles.serializers import ProfileSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import status
 
 User = get_user_model()
 
@@ -134,9 +136,25 @@ class CurrentUserView(APIView):
 
 
 class UserDetailView(APIView):
+    """사용자 상세 정보를 조회하는 뷰.
+
+    Attributes:
+        permission_classes: 인증된 사용자만 접근 가능
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, username):
+        """사용자 정보를 조회합니다.
+
+        Args:
+            request: HTTP 요청 객체
+            username: 조회할 사용자의 username
+
+        Returns:
+            Response: 사용자 정보 데이터
+            Response: 404 에러 (사용자가 존재하지 않는 경우)
+        """
         try:
             user = User.objects.get(username=username)
             serializer = SimpleUserSerializer(user)
@@ -148,9 +166,27 @@ class UserDetailView(APIView):
 
 
 class PasswordChangeView(APIView):
+    """비밀번호 변경을 처리하는 뷰.
+
+    Attributes:
+        permission_classes: 인증된 사용자만 접근 가능
+    """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """비밀번호 변경을 처리합니다.
+
+        Args:
+            request: HTTP 요청 객체 (old_password, new_password1, new_password2 포함)
+
+        Returns:
+            Response: 성공 메시지와 200 상태코드
+            Response: 400 에러 (유효성 검사 실패 시)
+
+        Raises:
+            ValidationError: 비밀번호 유효성 검사 실패 시
+        """
         user = request.user
         old_password = request.data.get("old_password")
         new_password1 = request.data.get("new_password1")

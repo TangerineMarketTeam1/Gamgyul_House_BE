@@ -1,22 +1,29 @@
 from django.contrib.auth import get_user_model
-from django_filters import rest_framework as filters
 from django.shortcuts import get_object_or_404
+
+from django_filters import rest_framework as filters
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiParameter,
-    OpenApiExample,
-)
+
 from accounts.serializers import SimpleUserSerializer
-from .filters import ProfileFilter, PostFilter, ProductFilter, MessageFilter
 from chats.models import ChatRoom, Message
-from posts.models import Post
-from market.models import Product
-from .serializers import PostSearchSerializer, MessageSearchSerializer
-from market.serializers import ProductListSerializer
 from config.pagination import PageNumberPagination
+from market.models import Product
+from market.serializers import ProductListSerializer
+from posts.models import Post
+from .filters import (
+    MessageFilter,
+    PostFilter,
+    ProductFilter,
+    ProfileFilter,
+)
+from .serializers import MessageSearchSerializer, PostSearchSerializer
 
 User = get_user_model()
 
