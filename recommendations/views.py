@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
+
+from django_filters import rest_framework as filters
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters import rest_framework as filters
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+
 from accounts.serializers import SimpleUserSerializer
 from .filters import FriendRecommendationFilter
 

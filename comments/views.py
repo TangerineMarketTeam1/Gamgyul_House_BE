@@ -1,14 +1,14 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.exceptions import PermissionDenied
 from drf_spectacular.utils import (
-    extend_schema,
+    OpenApiExample,
     OpenApiParameter,
     OpenApiResponse,
-    OpenApiExample,
+    extend_schema,
 )
+from rest_framework import status, viewsets
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
 from .models import Comment
 from .serializers import CommentSerializer
 
@@ -43,7 +43,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         },
     )
     def list(self, request, *args, **kwargs):
-        """특정 게시물에 대한 댓글 목록 반환"""
+        """특정 게시물의 댓글 목록을 반환합니다.
+
+        Args:
+            request: HTTP 요청 객체
+            *args: 추가 인자
+            **kwargs: 키워드 인자 (post_id 포함)
+
+        Returns:
+            Response: 댓글 목록 데이터
+        """
         post_id = self.kwargs.get("post_id")
         queryset = self.queryset.filter(post_id=post_id).order_by("-created_at")
         serializer = self.get_serializer(queryset, many=True)
@@ -71,7 +80,19 @@ class CommentViewSet(viewsets.ModelViewSet):
         },
     )
     def create(self, request, *args, **kwargs):
-        """새 댓글 또는 대댓글 작성"""
+        """새 댓글 또는 대댓글을 작성합니다.
+
+        Args:
+            request: HTTP 요청 객체
+            *args: 추가 인자
+            **kwargs: 키워드 인자 (post_id 포함)
+
+        Returns:
+            Response: 생성된 댓글 데이터와 201 상태코드
+
+        Raises:
+            Response: 대댓글 개수 초과시 400 에러
+        """
         post_id = self.kwargs.get("post_id")
         parent_comment_id = request.data.get("parent_comment", None)
 
@@ -93,6 +114,13 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer, post_id, parent_comment_id):
+        """댓글 생성을 수행합니다.
+
+        Args:
+            serializer: 댓글 시리얼라이저 인스턴스
+            post_id: 게시물 ID
+            parent_comment_id: 부모 댓글 ID (대댓글인 경우)
+        """
         if parent_comment_id:
             parent_comment = Comment.objects.get(id=parent_comment_id)
             serializer.save(
@@ -119,7 +147,19 @@ class CommentViewSet(viewsets.ModelViewSet):
         },
     )
     def destroy(self, request, *args, **kwargs):
-        """댓글 삭제"""
+        """댓글과 관련 대댓글을 삭제합니다.
+
+        Args:
+            request: HTTP 요청 객체
+            *args: 추가 인자
+            **kwargs: 키워드 인자
+
+        Returns:
+            Response: 204 No Content 응답
+
+        Raises:
+            PermissionDenied: 댓글 작성자가 아닌 경우
+        """
         instance = self.get_object()
         if instance.user != request.user:
             raise PermissionDenied("댓글 작성자만 삭제할 수 있습니다.")
@@ -130,8 +170,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
+        """해당 뷰에 필요한 권한들을 반환합니다.
+
+        Returns:
+            list: 필요한 권한 클래스들의 인스턴스 리스트
         """
         if self.action in ["create", "update", "partial_update", "destroy"]:
             permission_classes = [IsAuthenticated]

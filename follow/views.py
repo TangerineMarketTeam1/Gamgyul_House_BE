@@ -1,18 +1,20 @@
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+
 from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiParameter,
-    OpenApiTypes,
     OpenApiExample,
+    OpenApiParameter,
     OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
 )
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from profiles.serializers import ProfileSerializer
 from .models import Follow
 from .serializers import FollowSerializer
-from profiles.serializers import ProfileSerializer
 
 User = get_user_model()
 

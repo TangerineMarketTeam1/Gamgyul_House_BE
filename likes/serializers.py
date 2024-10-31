@@ -1,7 +1,9 @@
-from rest_framework import serializers
-from .models import Like
 from django.contrib.auth import get_user_model
+
+from rest_framework import serializers
+
 from accounts.serializers import SimpleUserSerializer
+from .models import Like
 
 User = get_user_model()
 

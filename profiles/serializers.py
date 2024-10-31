@@ -1,14 +1,16 @@
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
+
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from follow.models import Follow
+from follow.serializers import FollowSerializer
 from market.models import Product
 from market.serializers import ProductSerializer
-from follow.serializers import FollowSerializer
-from .models import PrivacySettings
 from posts.models import Post
-from follow.models import Follow
+from .models import PrivacySettings
 
 User = get_user_model()
 
