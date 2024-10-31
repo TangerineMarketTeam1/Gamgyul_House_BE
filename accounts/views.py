@@ -1,6 +1,9 @@
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import LoginView
 from rest_framework.response import Response
@@ -12,7 +15,6 @@ from .serializers import (
     SimpleUserSerializer,
 )
 from profiles.serializers import ProfileSerializer
-from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
@@ -143,3 +145,49 @@ class UserDetailView(APIView):
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class PasswordChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        old_password = request.data.get("old_password")
+        new_password1 = request.data.get("new_password1")
+        new_password2 = request.data.get("new_password2")
+
+        # 필수 필드 체크
+        if not all([old_password, new_password1, new_password2]):
+            return Response(
+                {"detail": "모든 필드를 입력해주세요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 현재 비밀번호 확인
+        if not user.check_password(old_password):
+            return Response(
+                {"detail": "현재 비밀번호가 올바르지 않습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 새 비밀번호 일치 확인
+        if new_password1 != new_password2:
+            return Response(
+                {"detail": "새 비밀번호가 일치하지 않습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 새 비밀번호 유효성 검사
+        try:
+            validate_password(new_password1, user)
+        except ValidationError as e:
+            return Response({"detail": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 비밀번호 변경
+        user.set_password(new_password1)
+        user.save()
+
+        return Response(
+            {"detail": "비밀번호가 성공적으로 변경되었습니다."},
+            status=status.HTTP_200_OK,
+        )
