@@ -4,6 +4,7 @@ from django_filters import rest_framework as filters
 from chats.models import Message
 from posts.models import Post
 from market.models import Product
+from taggit.models import Tag
 
 User = get_user_model()
 
@@ -77,7 +78,8 @@ class PostFilter(filters.FilterSet):
 
         for word in words:
             if word.startswith("#"):
-                tag_query |= Q(tags__name__iexact=word[1:])
+                tag_name = word[1:]
+                tag_query |= Q(tags__name__contains=f'"{tag_name}"')
             else:
                 content_query |= (
                     Q(content__icontains=word)
