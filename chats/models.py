@@ -87,3 +87,10 @@ class WebSocketConnection(models.Model):
         for message in unread_messages:
             message.is_read = True
             message.save(update_fields=["is_read"])
+
+    @classmethod
+    def get_active_connections(cls, chat_room):
+        """
+        현재 활성 상태인 WebSocket 연결 목록을 반환
+        """
+        return cls.objects.filter(chat_room=chat_room, disconnected_at__isnull=True)
