@@ -21,7 +21,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            # 채팅방 존재 여부 및 권한 확인
             if await self.is_user_in_room(self.room_id, self.scope["user"]):
                 await self.channel_layer.group_add(
                     self.room_group_name, self.channel_name
@@ -37,11 +36,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         }
                     )
                 )
+
+                # 연결 시 읽지 않은 메시지 읽음 처리
+                await self.mark_messages_as_read(self.room_id, self.scope["user"])
             else:
                 await self.close(code=4002)
         except Exception as e:
             print(f"Connection error: {e}")
             await self.close(code=4003)
+
+    async def chat_message(self, event):
+        """
+        채널 레이어를 통해 받은 메시지를 클라이언트에게 전송
+        """
+        try:
+            message = event["message"]
+            print(f"Sending message to client: {message}")
+
+            # 메시지 형식을 클라이언트가 기대하는 형식으로 변환
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "chat_message",
+                        "message": {
+                            "id": message.get("id"),
+                            "content": message.get("content"),
+                            "sender": message.get("sender"),
+                            "image": message.get("image"),
+                            "sent_at": message.get("sent_at"),
+                            "is_read": message.get("is_read"),
+                        },
+                    }
+                )
+            )
+        except Exception as e:
+            print(f"Error sending message to client: {e}")
 
     async def disconnect(self, close_code):
         """

@@ -60,22 +60,44 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         ],
     )
     def create(self, request, *args, **kwargs):
-        participants = request.data.get("participants", [])
-        if not participants:
-            return Response({"error": "참여자 username이 필요합니다."}, status=400)
-
-        if isinstance(participants, str):
-            participants = [p.strip() for p in participants.split(",")]
-
-        participants.append(request.user.username)
-        participants = list(set(participants))
-
-        if len(participants) != 2:
-            return Response({"error": "1대1 채팅만 가능합니다."}, status=400)
-
-        serializer = self.get_serializer(data={"participants": participants})
+        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        message = serializer.save(sender=self.request.user, chat_room=chat_room)
+
+        # WebSocket을 통해 메시지 브로드캐스팅
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{chat_room.id}",
+            {
+                "type": "chat_message",
+                "message": {
+                    "id": str(message.id),
+                    "content": message.content,
+                    "sender": {
+                        "id": str(message.sender.id),
+                        "username": message.sender.username,
+                        "email": message.sender.email,
+                        "profile_image": (
+                            message.sender.profile_image.url
+                            if message.sender.profile_image
+                            else None
+                        ),
+                    },
+                    "image": message.image.url if message.image else None,
+                    "sent_at": message.sent_at.isoformat(),
+                    "is_read": message.is_read,
+                },
+            },
+        )
+
+        # 상대방이 WebSocket을 통해 연결되어 있는 경우 읽음 처리
+        other_user = chat_room.participants.exclude(id=self.request.user.id).first()
+        if WebSocketConnection.objects.filter(
+            user=other_user, chat_room=chat_room, disconnected_at__isnull=True
+        ).exists():
+            message.is_read = True
+            message.save()
 
         return Response(serializer.data, status=201)
 
