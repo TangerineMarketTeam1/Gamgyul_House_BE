@@ -60,10 +60,18 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         ],
     )
     def create(self, request, *args, **kwargs):
-        chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
-        serializer = self.get_serializer(data=request.data)
+        # 시리얼라이저에 현재 사용자 정보 추가
+        data = request.data.copy()
+        if isinstance(data.get("participants"), list):
+            data["participants"].append(request.user.username)
+        else:
+            data["participants"] = [request.user.username]
+
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        message = serializer.save(sender=self.request.user, chat_room=chat_room)
+        chat_room = serializer.save()
+
+        headers = self.get_success_headers(serializer.data)
 
         # WebSocket을 통해 메시지 브로드캐스팅
         channel_layer = get_channel_layer()
@@ -99,7 +107,7 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
             message.is_read = True
             message.save()
 
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=201, headers=headers)
 
     @extend_schema(
         parameters=[
