@@ -45,33 +45,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             print(f"Connection error: {e}")
             await self.close(code=4003)
 
-    async def chat_message(self, event):
-        """
-        채널 레이어를 통해 받은 메시지를 클라이언트에게 전송
-        """
-        try:
-            message = event["message"]
-            print(f"Sending message to client: {message}")
-
-            # 메시지 형식을 클라이언트가 기대하는 형식으로 변환
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "chat_message",
-                        "message": {
-                            "id": message.get("id"),
-                            "content": message.get("content"),
-                            "sender": message.get("sender"),
-                            "image": message.get("image"),
-                            "sent_at": message.get("sent_at"),
-                            "is_read": message.get("is_read"),
-                        },
-                    }
-                )
-            )
-        except Exception as e:
-            print(f"Error sending message to client: {e}")
-
     async def disconnect(self, close_code):
         """
         WebSocket 연결 종료 시 호출
@@ -109,17 +82,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def chat_message(self, event):
         """
-        메시지를 클라이언트에 전송
+        메시지를 클라이언트에게 전송
         """
-        message = event.get("message")
-        message_id = event.get("message_id")
+        message = event["message"]
 
+        # 발신자에게는 메시지를 다시 보내지 않음
+        if str(message["sender"]["id"]) == str(self.scope["user"].id):
+            return
+
+        # 수신자에게만 메시지 전송
         await self.send(
             text_data=json.dumps(
                 {
-                    "message": message,
-                    "message_id": message_id,
                     "status": "received",
+                    "message": message,
+                    "message_id": str(message["id"]),
                 }
             )
         )

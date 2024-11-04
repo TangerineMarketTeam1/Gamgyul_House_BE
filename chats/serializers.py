@@ -31,8 +31,8 @@ class ChatRoomSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        새로운 채팅방을 생성하는 로직. 참여자가 2명이어야 하며, 중복된 채팅방을 허용하지 않음.
-        참가자 ID를 정렬하여 room_key 생성.
+        새로운 채팅방을 생성하는 로직. 참여자가 2명이어야 하며, room_key로 채팅방을 찾고 관리합니다.
+        나갔던 사용자가 다시 들어올 수 있도록 합니다.
         """
         participants = validated_data.pop("participants")
 
@@ -43,19 +43,26 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         participant_ids = sorted([str(participant.id) for participant in participants])
         room_key = "_".join(participant_ids)
 
-        # 동일한 room_key가 존재하는지 확인하여 중복 방지
+        # 동일한 room_key를 가진 채팅방 검색
         existing_room = ChatRoom.objects.filter(room_key=room_key).first()
-        if existing_room:
-            raise serializers.ValidationError("이미 이 사용자와의 채팅방이 존재합니다.")
 
-        # 채팅방 생성 및 참가자 설정
+        if existing_room:
+            # 이미 양쪽 다 참여중인 경우
+            if all(
+                participant in existing_room.participants.all()
+                for participant in participants
+            ):
+                raise serializers.ValidationError(
+                    "이미 이 사용자와의 채팅방이 존재합니다."
+                )
+
+            # 한 명만 참여중인 경우, 다른 한 명을 다시 추가
+            existing_room.participants.add(*participants)
+            return existing_room
+
+        # 채팅방이 없는 경우 새로 생성
         chat_room = ChatRoom.objects.create(room_key=room_key)
         chat_room.participants.set(participants)
-
-        # 채팅방 이름 설정
-        participant_usernames = ", ".join([user.username for user in participants])
-        chat_room.name = f"{participant_usernames}의 대화"
-        chat_room.save()
 
         return chat_room
 
