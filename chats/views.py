@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from uuid import UUID
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from chats.models import ChatRoom, Message, WebSocketConnection
 from chats.serializers import ChatRoomSerializer, MessageSerializer
 
@@ -72,41 +74,6 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         chat_room = serializer.save()
 
         headers = self.get_success_headers(serializer.data)
-
-        # WebSocket을 통해 메시지 브로드캐스팅
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"chat_{chat_room.id}",
-            {
-                "type": "chat_message",
-                "message": {
-                    "id": str(message.id),
-                    "content": message.content,
-                    "sender": {
-                        "id": str(message.sender.id),
-                        "username": message.sender.username,
-                        "email": message.sender.email,
-                        "profile_image": (
-                            message.sender.profile_image.url
-                            if message.sender.profile_image
-                            else None
-                        ),
-                    },
-                    "image": message.image.url if message.image else None,
-                    "sent_at": message.sent_at.isoformat(),
-                    "is_read": message.is_read,
-                },
-            },
-        )
-
-        # 상대방이 WebSocket을 통해 연결되어 있는 경우 읽음 처리
-        other_user = chat_room.participants.exclude(id=self.request.user.id).first()
-        if WebSocketConnection.objects.filter(
-            user=other_user, chat_room=chat_room, disconnected_at__isnull=True
-        ).exists():
-            message.is_read = True
-            message.save()
-
         return Response(serializer.data, status=201, headers=headers)
 
     @extend_schema(
@@ -193,13 +160,49 @@ class MessageViewSet(viewsets.ModelViewSet):
         chat_room = get_chat_room_or_404(self.kwargs["room_id"], self.request.user)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        # 먼저 메시지를 생성하고 저장
         message = serializer.save(sender=self.request.user, chat_room=chat_room)
 
-        # 상대방이 WebSocket을 통해 연결되어 있고, 메시지를 실제로 읽은 경우 읽음 처리
+        # 상대방 찾기
         other_user = chat_room.participants.exclude(id=self.request.user.id).first()
+
+        # WebSocket 연결 상태와 관계없이 기본적으로 is_read는 False로 설정
+        message.is_read = False
+
+        # 상대방이 현재 WebSocket으로 연결되어 있는 경우에만 is_read를 True로 설정
         if WebSocketConnection.objects.filter(
             user=other_user, chat_room=chat_room, disconnected_at__isnull=True
         ).exists():
             message.is_read = True
-            message.save()
+
+        # 변경사항 저장
+        message.save()
+
+        # WebSocket을 통해 메시지 브로드캐스팅
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{chat_room.id}",
+            {
+                "type": "chat_message",
+                "message": {
+                    "id": str(message.id),
+                    "content": message.content,
+                    "sender": {
+                        "id": str(message.sender.id),
+                        "username": message.sender.username,
+                        "email": message.sender.email,
+                        "profile_image": (
+                            message.sender.profile_image.url
+                            if message.sender.profile_image
+                            else None
+                        ),
+                    },
+                    "image": message.image.url if message.image else None,
+                    "sent_at": message.sent_at.isoformat(),
+                    "is_read": message.is_read,
+                },
+            },
+        )
+
         return Response(serializer.data, status=201)
