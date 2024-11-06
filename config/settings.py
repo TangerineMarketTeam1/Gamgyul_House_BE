@@ -236,7 +236,7 @@ STORAGES = {
         "OPTIONS": {
             "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
             "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": "gamgyulhouse",
+            "bucket_name": "gamgyulhouse1",
             "region_name": "ap-northeast-2",
             "default_acl": "public-read",
             "querystring_auth": False,
@@ -247,12 +247,12 @@ STORAGES = {
         "OPTIONS": {
             "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
             "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "bucket_name": "gamgyulhouse",
+            "bucket_name": "gamgyulhouse1",
         },
     },
 }
 
-AWS_STORAGE_BUCKET_NAME = "gamgyulhouse"
+AWS_STORAGE_BUCKET_NAME = "gamgyulhouse1"
 AWS_S3_REGION_NAME = "ap-northeast-2"
 AWS_S3_CUSTOM_DOMAIN = (
     f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
