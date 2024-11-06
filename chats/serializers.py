@@ -37,7 +37,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         participants = validated_data.pop("participants")
 
         if len(participants) != 2:
-            raise serializers.ValidationError("1대1 채팅만 가능합니다.")
+            raise serializers.ValidationError({"error": "1대1 채팅만 가능합니다."})
 
         # 참가자 ID를 정렬한 후 room_key 생성
         participant_ids = sorted([str(participant.id) for participant in participants])
@@ -63,6 +63,11 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         # 채팅방이 없는 경우 새로 생성
         chat_room = ChatRoom.objects.create(room_key=room_key)
         chat_room.participants.set(participants)
+
+        # 채팅방 이름 설정
+        participant_usernames = ", ".join([user.username for user in participants])
+        chat_room.name = f"{participant_usernames}의 대화"
+        chat_room.save()
 
         return chat_room
 
