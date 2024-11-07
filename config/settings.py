@@ -258,8 +258,8 @@ AWS_S3_CUSTOM_DOMAIN = (
     f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 )
 
-# CORS 설정 (환경 변수에서 가져오도록 수정)
-CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서만 사용
+# CORS 설정
+CORS_ALLOW_ALL_ORIGINS = False  # 개발 환경에서만 사용
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
@@ -267,6 +267,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://accounts.google.com",
     f"https://{AWS_S3_CUSTOM_DOMAIN}",
     "http://3.35.220.139",  # 벡엔드 주소
+    "http://59.18.34.179",
+    "http://210.117.121.223",
 ]
 
 # 추가 CORS 설정
