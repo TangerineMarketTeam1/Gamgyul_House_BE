@@ -259,8 +259,9 @@ AWS_S3_CUSTOM_DOMAIN = (
 )
 
 # CORS 설정
-CORS_ALLOW_ALL_ORIGINS = False  # 개발 환경에서만 사용
+CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서만 사용
 CORS_ALLOW_CREDENTIALS = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
