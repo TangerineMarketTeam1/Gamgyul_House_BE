@@ -16,6 +16,11 @@ ALLOWED_HOSTS = [
     "3.35.220.139",
     "localhost",
     "127.0.0.1",
+    "gamgyulhouse.store",
+    "www.gamgyulhouse.store",
+    "172.31.1.99",
+    "172.31.17.128",
+    "172.31.3.121",
 ]
 
 INSTALLED_APPS = [
@@ -274,6 +279,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://3.35.220.139",  # 벡엔드 주소
     "http://59.18.34.179",
     "http://210.117.121.223",
+    "https://gamgyulhouse.store",
+    "http://gamgyulhouse.store",
+    "https://www.gamgyulhouse.store",
+    "http://www.gamgyulhouse.store",
 ]
 
 # 추가 CORS 설정
