@@ -18,6 +18,9 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "gamgyulhouse.store",
     "www.gamgyulhouse.store",
+    "172.31.1.99",
+    "172.31.17.128",
+    "172.31.3.121",
 ]
 
 INSTALLED_APPS = [
