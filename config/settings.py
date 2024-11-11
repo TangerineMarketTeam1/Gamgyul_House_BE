@@ -270,6 +270,7 @@ AWS_S3_CUSTOM_DOMAIN = (
 # CORS 설정
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
+CORS_REPLACE_HTTPS_REFERER = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
@@ -308,10 +309,10 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken", "Authorization"]
 
 # 로드 밸런서로 전달된 요청을 HTTPS로 처리하는 설정
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Crispy Forms 설정
 CRISPY_TEMPLATE_PACK = "bootstrap4"
