@@ -284,7 +284,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.gamgyulhouse.store",
     "http://www.gamgyulhouse.store",
     "https://gh-fe.vercel.app",
-    "http://gh-fe.vercel.app",
 ]
 
 # 추가 CORS 설정
