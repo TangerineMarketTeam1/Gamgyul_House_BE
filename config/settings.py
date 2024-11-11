@@ -308,8 +308,10 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# 이 설정도 추가
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+
+# 로드 밸런서로 전달된 요청을 HTTPS로 처리하는 설정
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Crispy Forms 설정
 CRISPY_TEMPLATE_PACK = "bootstrap4"
