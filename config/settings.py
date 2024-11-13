@@ -145,7 +145,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [("3.35.220.139", 6379)],
         },
     },
 }
@@ -193,7 +193,7 @@ SOCIALACCOUNT_PROVIDERS = {
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_CALLBACK_URI = (
-    "http://127.0.0.1:5500/templates/google-callback.html"  # 프론트 callback url 지정
+    "https://gh-fe.vercel.app/google-callback.html"  # 프론트 callback url 지정
 )
 
 # SMTP(Simple Mail Transfer ProtocoL) 설정
